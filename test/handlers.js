@@ -235,6 +235,8 @@ module.exports = {
   'RotatingFileHandler': {
     'handle': {
       'with maxSize should create new files': function(done) {
+        this.timeout(5000);
+
         var filename = tmp();
         var handler = new intel.handlers.Rotating({
           file: filename,
@@ -252,6 +254,8 @@ module.exports = {
         }).done(done);
       },
       'with maxFiles should not create more than max': function(done) {
+        this.timeout(5000);
+
         var filename = tmp();
         var handler = new intel.handlers.Rotating({
           file: filename,
