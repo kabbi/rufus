@@ -7,6 +7,7 @@ const EE = require('events').EventEmitter;
 
 const winston = require('winston');
 const intel = require('../');
+var log4js = require('log4js');
 
 var stdout = new EE();
 stdout.write = function (out, encoding, cb) {
@@ -24,6 +25,14 @@ intel.addHandler(new intel.handlers.Stream(stdout));
 winston.add(winston.transports.File, { stream: stdout });
 winston.remove(winston.transports.Console);
 
+log4js.configure({
+  appenders: [
+    { type: 'file', filename: '/tmp/cheese.log', category: '[default]' }
+  ]
+});
+
+log4js = log4js.getLogger();
+
 module.exports = {
   'logging.info()': {
     'bench': {
@@ -35,6 +44,9 @@ module.exports = {
       },
       'winston.info': function() {
         winston.info('asdf');
+      },
+      'log4js.info': function() {
+        log4js.info('asdf');
       }
     }
   }
