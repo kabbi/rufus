@@ -123,7 +123,10 @@ module.exports = {
           }
         };
 
-        var handler = new intel.handlers.Stream(stream);
+        var handler = new intel.handlers.Stream({
+          stream: stream,
+          formatter: new intel.Formatter('%message%n')
+        });
         handler.handle({ message: 'foo' }).then(function() {
           assert.equal(out, 'foo\n');
           done();
@@ -138,7 +141,10 @@ module.exports = {
             fn();
           }, 1);
         };
-        var handler = new intel.handlers.Stream(stream);
+        var handler = new intel.handlers.Stream({
+          stream: stream,
+          formatter: new intel.Formatter('%message%n')
+        });
         handler.handle({ message: 'secret' }).then(function() {
           assert.equal(out, 'secret\n');
         }).done(done);
@@ -167,7 +173,10 @@ module.exports = {
     'handle': {
       'should write to the file': function(done) {
         var filename = tmp();
-        var handler = new intel.handlers.File(filename);
+        var handler = new intel.handlers.File({
+          file: filename,
+          formatter: new intel.Formatter('%message%n')
+        });
         handler.handle({ message: 'recon' }).then(function() {
           fs.readFile(filename, function(err, contents) {
             assert.ifError(err);
@@ -188,7 +197,9 @@ module.exports = {
     },
     'handle': {
       'should send low priority messages to stdout': function(done) {
-        var h = new intel.handlers.Console();
+        var h = new intel.handlers.Console({
+          formatter: new intel.Formatter('%message%n')
+        });
         var val;
         h._out._stream = {
           write: function(out, callback) {
@@ -203,7 +214,9 @@ module.exports = {
         }).done(done);
       },
       'should send warn and higher messages to stderr': function(done) {
-        var h = new intel.handlers.Console();
+        var h = new intel.handlers.Console({
+          formatter: new intel.Formatter('%message%n')
+        });
         var val;
         h._err._stream = {
           write: function(out, callback) {
@@ -225,7 +238,8 @@ module.exports = {
         var filename = tmp();
         var handler = new intel.handlers.Rotating({
           file: filename,
-          maxSize: 64
+          maxSize: 64,
+          formatter: new intel.Formatter('%message%n')
         });
 
         assert.equal(handler._file, filename);
@@ -242,7 +256,8 @@ module.exports = {
         var handler = new intel.handlers.Rotating({
           file: filename,
           maxSize: 64,
-          maxFiles: 3
+          maxFiles: 3,
+          formatter: new intel.Formatter('%message%n')
         });
 
         handler.handle({ message: bytes(50) });

@@ -58,7 +58,7 @@ module.exports = {
       };
 
       intel.info('danger').then(function() {
-        assert.equal(val, 'root.INFO: danger\n');
+        assert.equal(val.match(/^[0-9\/\.,:] INFO  root - danger\r?\n$/));
         assert.equal(intel._level, oldLevel);
       }).done(done);
 
@@ -96,10 +96,10 @@ module.exports = {
       intel.config({
         formatters: {
           'basic': {
-            'format': '%(message)s'
+            'format': '%message'
           },
           'foo': {
-            'format': 'foo! %(levelname)s: %(message)s'
+            'format': 'foo! %level: %message'
           }
         },
         filters: {

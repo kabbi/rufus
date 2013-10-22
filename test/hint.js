@@ -51,8 +51,10 @@ module.exports = {
           var f = path.relative(process.cwd(), fileName);
           if (!jshint(String(data), jshintrc)) {
             jshint.errors.forEach(function(e) {
-              errors.push(
-                util.format("%s %s:%d - %s", e.id, f, e.line, e.reason));
+              if(e) {
+                errors.push(
+                  util.format("%s %s:%d - %s", e.id, f, e.line, e.reason));
+              }
             });
           }
         });

@@ -18,13 +18,11 @@ module.exports = {
       },
       'should accept options': function() {
         var formatter = new intel.Formatter({
-          format: '%(levelname)s',
-          datefmt: '%Y',
+          format: '%level',
           colorize: true
         });
 
-        assert.equal(formatter._format, '%(levelname)s');
-        assert.equal(formatter._datefmt, '%Y');
+        assert.equal(formatter._format, '%level');
         assert.equal(formatter._colorize, true);
       }
     },
@@ -34,8 +32,7 @@ module.exports = {
       'datefmt': {
         'should format the date': function() {
           var formatter = new intel.Formatter({
-            format: '%(date)s',
-            datefmt: '%Y-%m'
+            format: '%date{%Y-%m}'
           });
 
           var d = new Date();
@@ -57,7 +54,7 @@ module.exports = {
       'colorize': {
         'should colorize the output': function() {
           var formatter = new intel.Formatter({
-            format: '%(levelname)s: %(message)s',
+            format: '%level: %message',
             colorize: true
           });
 
@@ -67,7 +64,7 @@ module.exports = {
             message: 'foo'
           };
           assert.equal(formatter.format(record),
-              '\u001b[31mERROR\u001b[39m: foo');
+              '\u001b[31mERROR: foo\u001b[39m');
         }
       }
     }
