@@ -3,7 +3,9 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const intel = require('../../');
-
+intel.basicConfig({
+  format: '%logger.%level - %message'
+});
 intel.handleExceptions(process.argv.indexOf('--noexit') === -1);
 
 setTimeout(function() {

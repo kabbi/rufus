@@ -89,21 +89,13 @@ module.exports = {
       'should make a record with a simple message': function() {
         var n = unique();
         var a = new Logger(n);
-        var record = a.makeRecord(n, intel.DEBUG, "foo", ["foo"]);
+        var record = a.makeRecord(n, intel.DEBUG, "foo", []);
         assert.equal(record.name, n);
         assert.equal(record.level, intel.DEBUG);
         assert.equal(record.levelname, 'DEBUG');
         assert.equal(record.message, 'foo');
         assert.equal(record.pid, process.pid);
-        assert.equal(record.args.length, 1);
-      },
-      'should make a record without a string message': function() {
-        var n = unique();
-        var a = new Logger(n);
-        var foo = { bar: 'baz' };
-        var record = a.makeRecord(n, intel.DEBUG, foo, [foo, 'quux', true]);
-
-        assert.equal(record.message, '{ bar: \'baz\' } quux true');
+        assert.equal(record.args.length, 0);
       }
     },
     'log': {
@@ -155,9 +147,8 @@ module.exports = {
         a.addHandler(new intel.handlers.Null());
         a.propagate = false;
 
-        a.debug('some foo %s baz', 'bar', function(err, record) {
+        a.debug('some foo %s baz', 'bar', function(err) {
           assert.ifError(err);
-          assert.equal(record.message, 'some foo bar baz');
           done();
         });
       },
@@ -169,7 +160,7 @@ module.exports = {
           a.propagate = false;
 
           a.debug('some foo %s baz', 'bar').then(function(record) {
-            assert.equal(record.message, 'some foo bar baz');
+            assert.equal(record.message, 'some foo %s baz');
           }).done(done);
         },
         'that rejects with an error': function(done) {
@@ -199,8 +190,7 @@ module.exports = {
         this.slow(300);
 
         spawn(false, function(err, stdout, stderr) {
-          stderr = stderr.substring(0, stderr.indexOf('\n'));
-          assert.equal(stderr, 'root.ERROR: [Error: catch me if you can]');
+          assert.equal(stderr, 'root.ERROR - Error: catch me if you can');
           assert(!stdout);
           done();
         });
@@ -209,9 +199,8 @@ module.exports = {
         this.slow(300);
 
         spawn(true, function(err, stdout, stderr) {
-          stderr = stderr.substring(0, stderr.indexOf('\n'));
-          assert.equal(stderr, 'root.ERROR: [Error: catch me if you can]');
-          assert.equal(stdout, 'root.INFO: noexit\n');
+          assert.equal(stderr, 'root.ERROR - Error: catch me if you can');
+          assert.equal(stdout, 'root.INFO - noexit');
           done();
         });
       }

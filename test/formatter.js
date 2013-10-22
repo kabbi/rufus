@@ -4,7 +4,7 @@
 
 const assert = require('assert');
 
-const stacktrace = require('stack-trace');
+const EOL = require('os').EOL;
 
 const intel = require('../');
 
@@ -32,45 +32,22 @@ module.exports = {
 
     'format': {
       'should use printf': function() {
-        var formatter = new intel.Formatter('%(name)s: %(message)s');
+        var formatter = new intel.Formatter('%logger: %message');
         assert.equal(formatter.format({ name: 'foo', message: 'bar' }),
             'foo: bar');
       },
-      'should be able to output record args': function() {
-        var formatter = new intel.Formatter('%(name)s: %(message)s [%(args)s]');
-        var record = {
-          name: 'foo',
-          message: 'bar',
-          args: ['baz', 3, new Error('quux')]
-        };
-        assert.equal(formatter.format(record), 'foo: bar [baz,3,Error: quux]');
-      },
-      'should output as JSON with %O': function() {
-        var formatter = new intel.Formatter('%O');
-        var e = new Error('boom');
-        var trace = stacktrace.parse(e.stack);
-        trace.shift();
-        var record = {
-          name: 'foo',
-          message: 'oh noes:',
-          args: ['oh noes:', e],
-          stack: trace
-        };
-
-        assert.equal(formatter.format(record), JSON.stringify(record));
-      },
       'should output an Error stack': function() {
-        var formatter = new intel.Formatter('%(name)s: %(message)s');
+        var formatter = new intel.Formatter('%logger: %message%n%er');
         var e = new Error('boom');
-        var trace = e.stack.substr(e.stack.indexOf('\n'));
         var record = {
           name: 'foo',
           message: 'oh noes: ',
           args: ['oh noes:', e],
-          stack: trace
+          err: e
         };
 
-        assert.equal(formatter.format(record), 'foo: oh noes: ' + trace);
+        assert.equal(formatter.format(record), 'foo: oh noes: ' +
+          EOL + e.stack + EOL);
       },
       'datefmt': {
         'should format the date': function() {
