@@ -190,7 +190,7 @@ module.exports = {
         this.slow(300);
 
         spawn(false, function(err, stdout, stderr) {
-          assert.equal(stderr, 'root.ERROR - Error: catch me if you can');
+          assert.equal(stderr, 'root.ERROR - Uncaught exception handled');
           assert(!stdout);
           done();
         });
@@ -199,7 +199,7 @@ module.exports = {
         this.slow(300);
 
         spawn(true, function(err, stdout, stderr) {
-          assert.equal(stderr, 'root.ERROR - Error: catch me if you can');
+          assert.equal(stderr, 'root.ERROR - Uncaught exception handled');
           assert.equal(stdout, 'root.INFO - noexit');
           done();
         });
