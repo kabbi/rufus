@@ -54,11 +54,11 @@ module.exports = {
       };
 
       intel.basicConfig = function() {
-        oldBasic({ stream: stream });
+        oldBasic({ stream: stream, format: '%message' });
       };
 
       intel.info('danger').then(function() {
-        assert.equal(val.match(/^[0-9\/\.,:] INFO  root - danger\r?\n$/));
+        assert.equal(val, 'danger');
         assert.equal(intel._level, oldLevel);
       }).done(done);
 
