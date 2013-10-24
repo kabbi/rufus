@@ -7,6 +7,7 @@ const EE = require('events').EventEmitter;
 
 const winston = require('winston');
 const rufus = require('../');
+const intel = require('intel');
 
 var stdout = new EE();
 stdout.write = function (out, encoding, cb) {
@@ -19,17 +20,12 @@ stdout.write = function (out, encoding, cb) {
 };
 
 var _console = new Console(stdout, stdout);
-//console.log = _console.log.bind(_console); //it is for log4js
 
-const log4js = require('log4js');
-
-
-rufus.addHandler(new rufus.handlers.Stream(stdout));
+rufus.addHandler(new rufus.handlers.Stream({ stream: stdout, formatter: new rufus.Formatter('[%date] %logger:: %message') }));
+intel.addHandler(new intel.handlers.Stream({ stream: stdout, formatter: new intel.Formatter('[%(date)s] %(name)s:: %(message)s') }));
 
 winston.add(winston.transports.File, { stream: stdout });
 winston.remove(winston.transports.Console);
-
-log4js = log4js.getLogger();
 
 var Benchmark = require('benchmark');
 
@@ -40,13 +36,13 @@ suite
     _console.info('asdf');
   })
   .add('rufus.info', function() {
-    rufus.log(rufus.INFO, 'asdf');
+    rufus.info('asdf');
   })
   .add('winston.info', function() {
     winston.info('asdf');
   })
-  .add('log4js.info', function() {
-    log4js.info('asdf');
+  .add('intel.info', function() {
+    intel.info('asdf');
   })
 
 suite

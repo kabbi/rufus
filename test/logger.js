@@ -99,6 +99,18 @@ module.exports = {
       }
     },
     'log': {
+      'should be usable without alias': function() {
+        var n = unique();
+        var a = new Logger(n);
+        a.propagate = false;
+
+        var spyA = spy();
+        a.addHandler({ handle: spyA, level: 0 });
+
+        a.log(rufus.INFO, 'foo');
+
+        assert.equal(spyA.getCallCount(), 1);
+      },
       'should filter messages': function() {
         var n = unique();
         var a = new Logger(n);
@@ -141,27 +153,14 @@ module.exports = {
         assert.equal(spyB.getCallCount(), 1);
         assert.equal(spyC.getCallCount(), 1);
       },
-      'should trigger provided callback': function(done) {
-        var n = unique();
-        var a = new Logger(n);
-        a.addHandler(new rufus.handlers.Null());
-        a.propagate = false;
-
-        a.debug('some foo %s baz', 'bar', function(err) {
-          assert.ifError(err);
-          done();
-        });
-      },
       'should return a promise': {
-        'that resolves with a record': function(done) {
+        'that resolves': function(done) {
           var n = unique();
           var a = new Logger(n);
           a.addHandler(new rufus.handlers.Null());
           a.propagate = false;
 
-          a.debug('some foo %s baz', 'bar').then(function(record) {
-            assert.equal(record.message, 'some foo %s baz');
-          }).done(done);
+          a.debug('some foo %s baz', 'bar').done(done);
         },
         'that rejects with an error': function(done) {
           var n = unique();
@@ -191,7 +190,6 @@ module.exports = {
 
         spawn(false, function(err, stdout, stderr) {
           assert.equal(stderr, 'root.ERROR - Uncaught exception handled');
-          assert(!stdout);
           done();
         });
       },

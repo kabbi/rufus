@@ -193,6 +193,11 @@ module.exports = {
         var h = new rufus.handlers.Console();
         assert.equal(h._out._stream, process.stdout);
         assert.equal(h._err._stream, process.stderr);
+      },
+      'should pass options to StreamHandlers': function() {
+        var f = new rufus.Formatter({ colorize: true });
+        var h = new rufus.handlers.Console({ formatter: f });
+        assert(h._out._formatter._colorize);
       }
     },
     'handle': {

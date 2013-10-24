@@ -1,35 +1,31 @@
 {
-  "name": "intel",
+  "name": "rufus",
   "version": "0.3.0-dev",
   "dependencies": {
+    "bluebird": "0.9.1-1",
     "chalk": "0.3.0",
-    "stack-trace": "0.0.7",
-    "q": "0.9.7"
+    "stack-trace": "0.0.7"
   },
   "devDependencies": {
-    "blanket": "1.1.5",
     "jshint": "2.3.0",
     "mocha": "1.13.0",
     "walk": "2.2.1",
     "winston": "0.7.2",
     "benchmark": "1.0.0",
-    "log4js": "0.6.9"
+    "log4js": "0.6.9",
+    "q": "~0.9.7",
+    "istanbul": "~0.1.44",
+    "intel": "~0.3.0"
   },
-  "readmeFilename": "README.md",
-  "description": "I need more intel.",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "make test",
-    "blanket": {
-      "pattern": "lib",
-      "data-cover-never": "node_modules"
-    }
+    "test": "make test"
   },
-  "bugs": "https://github.com/seanmonstar/intel/issues",
-  "homepage": "http://seanmonstar.github.io/intel",
+  "bugs": "https://github.com/btd/rufus/issues",
+  "homepage": "http://btd.github.io/rufus",
   "repository": {
     "type": "git",
-    "url": "https://github.com/seanmonstar/intel.git"
+    "url": "https://github.com/btd/rufus.git"
   },
   "engines": {
     "node": ">=0.8.0"
@@ -40,6 +36,11 @@
     "logger",
     "console"
   ],
-  "author": "Sean McArthur <sean.monstar@gmail.com> (http://seanmonstar.com)",
-  "license": "MPLv2.0"
+  "author": "Denis Bardadym <bardadymchik@gmail.com>",
+  "licenses": [
+    {
+      "type": "MPL 2.0",
+      "url": "https://mozilla.org/MPL/2.0/"
+    }
+  ]
 }
