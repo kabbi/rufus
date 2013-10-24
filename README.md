@@ -1,20 +1,8 @@
-# intel
+# rufus
 
-[![Build Status](https://travis-ci.org/seanmonstar/intel.png?branch=master)](https://travis-ci.org/seanmonstar/intel)
-[![NPM version](https://badge.fury.io/js/intel.png)](http://badge.fury.io/js/intel)
+[![Build Status](https://travis-ci.org/btd/rufus.png?branch=master)](https://travis-ci.org/btd/rufus)
 
-An abbreviation of intelligence. In this case, the acquirement of information.
-
-> I'm ganna need more intel.
-
-## Motivation
-
-Really? Another logger? Well, yes. But here's why:
-
-
-- hierarchial named loggers
-- powerful config
-- console injection works with all libraries 
+This is a fork of [intel](https://github.com/seanmonstar/intel). With changes required by myself and a bit more perfomace stable (does not depends from format of log too much).
 
 
 ## Table of Contents
@@ -36,7 +24,8 @@ Really? Another logger? Well, yes. But here's why:
   - [Creating a Custom Handler](#creating-a-custom-handler)
 - [Filters](#filters)
 - [Formatters](#formatters)
-  - [LogRecord Formatting](#logrecord)
+  - [Format String](#format)
+  - [Date format](#date-format)
 - [config](#config)
   - [basicConfig](#basicconfig)
   - [Full Configuration](#full-configuration)
@@ -46,74 +35,76 @@ Really? Another logger? Well, yes. But here's why:
 
 ### Using Default Logger
 
-To get started right away, intel provides a default logger. The module itself is an instance of a `Logger`.
+Rufus as intel exports default root logger to start right way. It can be usefull for small applications.
 
 ```js
-require('intel').info('Hello intel');
+require('rufus').info('Hello intel');
 ```
 
 ### String interpolation
 
-You can log messages using interpolation just as you can when using the `console.log` API:
+You can log messages using interpolation:
 
 ```js
-require('intel').info('Situation %s!', 'NORMAL');
+require('rufus').info('Situation %s!', 'NORMAL');
 ```
+
+%s output as string, %d as number, %O using JSON.stringify.
 
 ### Setting the Log Level
 
 Loggers have a log level that is compared against log messages. All messages that are of a lower level than the Logger are ignored. This is useful to reduce less important messages in production deployments.
 
 ```js
-var intel = require('intel');
-intel.setLevel(intel.WARN);
-intel.warn('i made it!');
-intel.debug('nobody loves me');
+var rufus = require('rufus');
+rufus.setLevel(intel.WARN);
+rufus.warn('i made it!');
+rufus.debug('nobody loves me');
 ```
+
+This snippet will output only `warn` message.
 
 ### Adding a Handler
 
 The default logger will use a [ConsoleHandler](#consolehandler) if you don't specify anything else. You can add handlers to any logger:
 
 ```js
-var intel = require('intel');
-intel.addHandler(new intel.handlers.File('/path/to/file.log'));
+var rufus = require('rufus');
+rufus.addHandler(new rufus.handlers.File('/path/to/file.log'));
 
-intel.info('going to a file!');
+rufus.info('going to a file!');
 ```
 
 ### Getting a Named Logger
 
-Using named loggers gives you a lot of power in `intel`. First, the logger name can be included in the log message, so you can more easily understand where log messages are happening inside your application.
+Using named loggers gives you a lot of power in `rufus`.
 
 ```js
-var log = require('intel').getLogger('foo.bar.baz');
+var log = require('rufus').getLogger('foo.bar.baz');
 log.setLevel(log.INFO).warn('baz reporting in');
 ```
 
 The names are used to build an hierarchy of loggers. Child loggers can inherit their parents' handlers and log level.
 
 ```js
-var intel = require('intel');
-var alpha = intel.getLogger('alpha');
+var rufus = require('rufus');
+var alpha = rufus.getLogger('alpha');
 alpha.setLevel(intel.WARN).addHandler(new intel.handlers.File('alpha.log'));
 
-var bravo = intel.getLogger('alpha.bravo');
+var bravo = rufus.getLogger('alpha.bravo');
 bravo.verbose('hungry') // ignored, since alpha has level of WARN
 bravo.warn('enemy spotted'); // logged to alpha.log
 ```
 
-The power of logger hierarchies can seen more when using [intel.config](#config).
+The power of logger hierarchies can seen more when using [rufus.config](#config).
 
 ### Logging Exceptions
 
-Any time you pass an exception (an `Error`!) to a log method, the stack
-will be included in the output. In most cases, it will be appended at
-the end of the message. If the format is `%O`, meaning JSON output, a
-stack property will be included.
+Any time you pass an exception (an `Error`!) to a log method as last argument, the stack
+will be included in the output (if in format presented `%er` or `%error`).
 
 ```js
-intel.error('ermahgawd', new Error('boom'));
+rufus.error('ermahgawd', new Error('boom'));
 ```
 
 Loggers can also handle `uncaughtException`, passing it to its handlers,
@@ -126,9 +117,11 @@ logger.handleExceptions(exitOnError);
 
 Pass a boolean for `exitOnError`. Default is `true` if no value is passed.
 
+There is some caviats with javascript nature that can be unclear. Log messages outputed asynchronously, so if unhandled exception will happen before, it can happen you will not see anything to understand what happen. So it is very recommended to log unhandled exceptions with one of loggers.
+
 ### Async logging
 
-With Nodejs' async nature, many handlers will be dealing with asynchronous APIs. In most cases, that shouldn't be your concern, and you can ignore this. However, if you need to execute code after a log message has been completely handled, every log method returns a promise. The promise only gets resolved after all handlers have finished handling that message.
+If you need to execute code after a log message has been completely handled, every log method returns a promise. The promise only gets resolved after all handlers have finished handling that message.
 
 ```js
 require('intel').warn('report in').then(rogerThat);
@@ -255,29 +248,124 @@ new intel.Formatter(formatOrOptions);
 
 A `Formatter` is used by a [`Handler`](#handlers) to format the message before being sent out. An useful example is wanting logs that go to the [Console](#consolehandler) to be terse and easy to read, but messages sent to a [File](#filehandler) to include a lot more detail.
 
-- **format**: A format string that will be used with `printf`. Default: `%(message)s`
-- **datefmt**: A string to be used to format the date. Will replace instances of `%(date)s` in the `format` string. Default: `%Y-%m-%d %H:%M-%S`
-- **colorize**: A boolean for whether to colorize the `levelname`. Default: `false`
+- **format**: A [format](#format) string.
+- **colorize**: A boolean for whether to colorize. Default: `false`
 
-### LogRecord
+### Format
 
-The record that is created by loggers is passed to each handler, and handlers pass it to formatters to do their formatting.
+<table>
+<tr>
+<th>Option</th>
+<th>Description</th>
+</tr>
+<tr>
+    <td>
+        %c <br/>
+        %lo <br/>
+        %logger
+    </td>
+  <td>Name of current logger</td>
+</tr>
+<tr>
+    <td>
+        %p <br/>
+        %le <br/>
+        %level
+    </td>
+  <td>Level name</td>
+</tr>
+<tr>
+    <td>
+        %d{<i>format</i>} <br/>
+        %date{<i>format</i>}
+    </td>
+  <td>
+      Output log timestamp. Format it is mostly C strftime format with small changes:
+        
+        See [date format](#date-format).
+    </td>
+</tr>
+<tr>
+    <td>
+        %pid
+    </td>
+  <td>PID of current process</td>
+</tr>
+<tr>
+    <td>
+        %m <br>
+        %msg <br>
+        %message
+    </td>
+  <td>Log message</td>
+</tr>
+<tr>
+    <td>
+        %n
+    </td>
+  <td>EOL</td>
+</tr>
+<tr>
+    <td>
+        %%
+    </td>
+  <td>%</td>
+</tr>
+<tr>
+    <td>
+        %er{<i>number</i>} <br>
+        %error{<i>number</i>}
+    </td>
+  <td>Output stack trace. Number can be: 'full', 'short', any integer. It output no more then specified number, 'full' means all lines, 'short' just one</td>
+</tr>
+<tr>
+    <td>
+        %X{something|defaultValue}
+    </td>
+  <td>NOT IMPLEMENTED. Specify some value via log context or default</td>
+</tr>
+</table>
+
+Default message format is:
 
 ```js
-{
-  name: "foo.bar",
-  level: 20,
-  levelname: "DEBUG",
-  timestamp: new Date(),
-  message: "all clear",
-  args: []
-}
+'[%date] %-5level %logger - %message%n%er'
 ```
 
-You can output the values from these properties using the [Formatter](#formatters) and a string with `%(property)s`. Some example format strings:
+### Date format
 
-- `%(name)s.%(levelname)s: %(message)s`: foo.bar.DEBUG: all clear
-- `[%(date)s] %(name)s:: %(message)s`: \[2013-09-18 11:29:32\] foo.bar:: all clear
+ - %% - %
+ - %A - full day name
+ - %a - abbriviated day name
+ - %B - full month name
+ - %b - abbriviated day name
+ - %c - date and time as .toString() output
+ - %C - year first 2 digits
+ - %d - day of the month, zero-padded (01-31)
+ - %e - day of the month, space-padded ( 1-31)
+ - %H - hour in 24h format (00-23)
+ - %h - abbriviated month name
+ - %I - hour in 12h format (01-12)
+ - %j - day of the year (001-366)
+ - %k - the same as %H
+ - %L - millis 3 digits zero padded
+ - %l - hours in 12 hours format zero padded
+ - %M - minutes zero padded
+ - %m - month digit zero padded
+ - %P - AM/PM
+ - %p - am/pm
+ - %S - seconds zero padded
+ - %t - \t
+ - %U - week number assume first day of week 'sunday'
+ - %u - day of week, monday is first day
+ - %W - as %U but for 'monday'
+ - %w - day number as 'sunday' is first
+ - %Y - year 4 digit
+ - %y - year last 2 digits
+ - %Z - time zone name (taken from toString() output)
+ - %z - time zone offset in hours
+
+Most of options support Ruby extensions to change padding: %_S will output second zero padded, %-S omit padding, %0S uses zero padding.
 
 ## config
 
