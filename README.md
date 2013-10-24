@@ -282,7 +282,7 @@ A `Formatter` is used by a [`Handler`](#handlers) to format the message before b
   <td>
       Output log timestamp. Format it is mostly C strftime format with small changes:
         
-        See [date format](#date-format).
+        See <a href="#date-format">date format</a>.
     </td>
 </tr>
 <tr>
@@ -333,6 +333,8 @@ Default message format is:
 ```
 
 ### Date format
+
+Default date format: `'%Y/%m/%d %H:%M:%S.%L'`.
 
  - %% - %
  - %A - full day name
