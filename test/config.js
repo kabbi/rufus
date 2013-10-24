@@ -7,13 +7,13 @@ const os = require('os');
 const path = require('path');
 const util = require('util');
 
-const intel = require('../');
+const rufus = require('../');
 
 const NOW = Date.now();
 var counter = 1;
 function tmp() {
   return path.join(os.tmpDir(),
-      'intel-' + NOW + '-' + process.pid + '-' + (counter++));
+      'rufus-' + NOW + '-' + process.pid + '-' + (counter++));
 }
 
 function spy() {
@@ -27,10 +27,10 @@ function spy() {
 }
 
 function SpyHandler() {
-  intel.Handler.apply(this, arguments);
+  rufus.Handler.apply(this, arguments);
   this.spy = spy();
 }
-util.inherits(SpyHandler, intel.Handler);
+util.inherits(SpyHandler, rufus.Handler);
 SpyHandler.prototype.emit = function spyEmit(record, callback) {
   this.spy.apply(this, arguments);
   callback();
@@ -41,8 +41,8 @@ var oldLevel;
 module.exports = {
   'basicConfig': {
     'before': function() {
-      oldBasic = intel.basicConfig;
-      oldLevel = intel._level;
+      oldBasic = rufus.basicConfig;
+      oldLevel = rufus._level;
     },
     'root logger calls basicConfig': function(done) {
       var val;
@@ -53,47 +53,47 @@ module.exports = {
         }
       };
 
-      intel.basicConfig = function() {
+      rufus.basicConfig = function() {
         oldBasic({ stream: stream, format: '%message' });
       };
 
-      intel.info('danger').then(function() {
+      rufus.info('danger').then(function() {
         assert.equal(val, 'danger');
-        assert.equal(intel._level, oldLevel);
+        assert.equal(rufus._level, oldLevel);
       }).done(done);
 
     },
     'only works once': function() {
-      intel.basicConfig();
-      assert.equal(intel._level, oldLevel);
+      rufus.basicConfig();
+      assert.equal(rufus._level, oldLevel);
 
-      intel.basicConfig({ level: 'critical' });
-      assert.equal(intel._handlers.length, 1);
-      assert.equal(intel._level, oldLevel);
+      rufus.basicConfig({ level: 'critical' });
+      assert.equal(rufus._handlers.length, 1);
+      assert.equal(rufus._level, oldLevel);
     },
     'works with file option': function() {
       var name = tmp();
-      intel.basicConfig({ file: name });
-      assert.equal(intel._handlers.length, 1);
-      assert.equal(intel._handlers[0]._file, name);
+      rufus.basicConfig({ file: name });
+      assert.equal(rufus._handlers.length, 1);
+      assert.equal(rufus._handlers[0]._file, name);
     },
     'works with level': function() {
-      intel.basicConfig({ level: 'error' });
-      assert.equal(intel._level, intel.ERROR);
+      rufus.basicConfig({ level: 'error' });
+      assert.equal(rufus._level, rufus.ERROR);
     },
     'works with format': function() {
-      intel.basicConfig({ format: '%(foo)s'});
-      assert.equal(intel._handlers[0]._formatter._format, '%(foo)s');
+      rufus.basicConfig({ format: '%(foo)s'});
+      assert.equal(rufus._handlers[0]._formatter._format, '%(foo)s');
     },
     'afterEach': function() {
-      intel.basicConfig = oldBasic;
-      intel.setLevel(oldLevel);
-      intel._handlers = [];
+      rufus.basicConfig = oldBasic;
+      rufus.setLevel(oldLevel);
+      rufus._handlers = [];
     }
   },
   'config': {
     'should be able to configure logging': function(done) {
-      intel.config({
+      rufus.config({
         formatters: {
           'basic': {
             'format': '%message'
@@ -128,11 +128,11 @@ module.exports = {
         }
       });
 
-      var excepts = intel.getLogger('qqq.ww.zzz');
+      var excepts = rufus.getLogger('qqq.ww.zzz');
       assert(excepts._uncaughtException);
       assert(!excepts._exitOnError);
 
-      var log = intel.getLogger('qqq.zzz');
+      var log = rufus.getLogger('qqq.zzz');
       var handler = log._handlers[0];
       assert.equal(log._handlers.length, 1);
       assert(!log.propagate);
@@ -154,9 +154,9 @@ module.exports = {
       }).done(done);
     },
     'should be able to config with just JSON': function() {
-      intel.config(require('./util/config.json'));
+      rufus.config(require('./util/config.json'));
 
-      var log = intel.getLogger('test.config.json');
+      var log = rufus.getLogger('test.config.json');
       assert.equal(log._handlers.length, 2);
     }
   }

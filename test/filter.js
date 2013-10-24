@@ -4,13 +4,13 @@
 
 const assert = require('assert');
 
-const intel = require('../');
+const rufus = require('../');
 
 module.exports = {
   'Filter': {
     'with regexp': {
       'should filter records based on message': function() {
-        var f = new intel.Filter(/^foo/g);
+        var f = new rufus.Filter(/^foo/g);
 
         assert(!f.filter({
           name: 'foo',
@@ -30,7 +30,7 @@ module.exports = {
     },
     'with string': {
       'should filter records based on logger name': function() {
-        var f = new intel.Filter('foo.bar');
+        var f = new rufus.Filter('foo.bar');
 
         assert(f.filter({
           name: 'foo.bar'
@@ -47,7 +47,7 @@ module.exports = {
     },
     'with function': {
       'should filter records': function() {
-        var f = new intel.Filter(function(record) {
+        var f = new rufus.Filter(function(record) {
           return record.name === 'foo' && record.message.indexOf('bar') !== -1;
         });
 

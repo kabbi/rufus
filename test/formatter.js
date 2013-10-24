@@ -6,20 +6,20 @@ const assert = require('assert');
 
 const EOL = require('os').EOL;
 
-const intel = require('../');
+const rufus = require('../');
 
 module.exports = {
   'Formatter': {
 
     'constructor': {
       'should accept a format string': function() {
-        var formatter = new intel.Formatter('%(level)s');
+        var formatter = new rufus.Formatter('%(level)s');
         assert.equal(formatter._format, '%(level)s');
-        assert.equal(formatter._datefmt, intel.Formatter.prototype._datefmt);
+        assert.equal(formatter._datefmt, rufus.Formatter.prototype._datefmt);
         assert.equal(formatter._colorize, false);
       },
       'should accept options': function() {
-        var formatter = new intel.Formatter({
+        var formatter = new rufus.Formatter({
           format: '%level',
           colorize: true
         });
@@ -32,12 +32,12 @@ module.exports = {
 
     'format': {
       'should use printf': function() {
-        var formatter = new intel.Formatter('%logger: %message');
+        var formatter = new rufus.Formatter('%logger: %message');
         assert.equal(formatter.format({ name: 'foo', message: 'bar' }),
             'foo: bar');
       },
       'should output an Error stack': function() {
-        var formatter = new intel.Formatter('%logger: %message%n%er');
+        var formatter = new rufus.Formatter('%logger: %message%n%er');
         var e = new Error('boom');
         var record = {
           name: 'foo',
@@ -51,7 +51,7 @@ module.exports = {
       },
       'datefmt': {
         'should format the date': function() {
-          var formatter = new intel.Formatter({
+          var formatter = new rufus.Formatter({
             format: '%date{%Y-%m}'
           });
 
@@ -72,7 +72,7 @@ module.exports = {
       },
       'colorize': {
         'should colorize the output': function() {
-          var formatter = new intel.Formatter({
+          var formatter = new rufus.Formatter({
             format: '%level: %message',
             colorize: true
           });

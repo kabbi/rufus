@@ -6,8 +6,7 @@ const Console = require('console').Console;
 const EE = require('events').EventEmitter;
 
 const winston = require('winston');
-const intel = require('../');
-var log4js = require('log4js');
+const rufus = require('../');
 
 var stdout = new EE();
 stdout.write = function (out, encoding, cb) {
@@ -20,34 +19,43 @@ stdout.write = function (out, encoding, cb) {
 };
 
 var _console = new Console(stdout, stdout);
-intel.addHandler(new intel.handlers.Stream(stdout));
+//console.log = _console.log.bind(_console); //it is for log4js
+
+const log4js = require('log4js');
+
+
+rufus.addHandler(new rufus.handlers.Stream(stdout));
 
 winston.add(winston.transports.File, { stream: stdout });
 winston.remove(winston.transports.Console);
 
-log4js.configure({
-  appenders: [
-    { type: 'file', filename: '/tmp/cheese.log', category: '[default]' }
-  ]
-});
-
 log4js = log4js.getLogger();
 
-module.exports = {
-  'logging.info()': {
-    'bench': {
-      'console.info': function() {
-        _console.info('asdf');
-      },
-      'intel.info': function() {
-        intel.log(intel.INFO, 'asdf');
-      },
-      'winston.info': function() {
-        winston.info('asdf');
-      },
-      'log4js.info': function() {
-        log4js.info('asdf');
-      }
-    }
-  }
-};
+var Benchmark = require('benchmark');
+
+var suite = new Benchmark.Suite('logging.info()');
+
+suite
+  .add('console.info', function() {
+    _console.info('asdf');
+  })
+  .add('rufus.info', function() {
+    rufus.log(rufus.INFO, 'asdf');
+  })
+  .add('winston.info', function() {
+    winston.info('asdf');
+  })
+  .add('log4js.info', function() {
+    log4js.info('asdf');
+  })
+
+suite
+// add listeners
+  .on('cycle', function (event) {
+    console.warn(String(event.target));
+  })
+  .on('complete', function () {
+    console.warn('Fastest is ' + this.filter('fastest').pluck('name'));
+  })
+// run async
+  .run({ 'async': true });

@@ -4,12 +4,12 @@
 
 const util = require('util');
 
-const intel = require('../../');
+const rufus = require('../../');
 
 function Spy() {
-  intel.Handler.apply(this, arguments);
+  rufus.Handler.apply(this, arguments);
 }
-util.inherits(Spy, intel.Handler);
+util.inherits(Spy, rufus.Handler);
 
 Spy.prototype.emit = function(record, callback) {
   callback();

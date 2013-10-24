@@ -5,7 +5,7 @@
   "filters": {},
   "handlers": {
     "empty": {
-      "class": "intel/handlers/null"
+      "class": "rufus/handlers/null"
     },
     "spy": {
       "class": "./test/util/spyhandler"

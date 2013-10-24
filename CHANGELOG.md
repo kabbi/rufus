@@ -1,4 +1,4 @@
-# intel ChangeLog
+# rufus ChangeLog
 
 ## v0.3.0-dev - Current master
 
@@ -9,6 +9,7 @@
 - added Logger#handleExceptions to catch uncaught exceptions
 - added stack traces when an exception is logged
 - changed datetime to strftime, adds `%L` to output milliseconds
+- fork intel to support it myself
 
 ## v0.2.0 - 2013-10-04
 

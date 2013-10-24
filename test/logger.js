@@ -7,8 +7,8 @@ const cp = require('child_process');
 const path = require('path');
 const util = require('util');
 
-const intel = require('../');
-const Logger = intel.Logger;
+const rufus = require('../');
+const Logger = rufus.Logger;
 
 var __counter = 1;
 function unique() {
@@ -68,7 +68,7 @@ module.exports = {
     'removeHandler': function() {
       var n = unique();
       var a = new Logger(n);
-      a.addHandler(new intel.handlers.Null());
+      a.addHandler(new rufus.handlers.Null());
       assert.equal(a._handlers.length, 1);
       a.removeHandler(a._handlers[0]);
       assert.equal(a._handlers.length, 0);
@@ -89,9 +89,9 @@ module.exports = {
       'should make a record with a simple message': function() {
         var n = unique();
         var a = new Logger(n);
-        var record = a.makeRecord(n, intel.DEBUG, "foo", []);
+        var record = a.makeRecord(n, rufus.DEBUG, "foo", []);
         assert.equal(record.name, n);
-        assert.equal(record.level, intel.DEBUG);
+        assert.equal(record.level, rufus.DEBUG);
         assert.equal(record.levelname, 'DEBUG');
         assert.equal(record.message, 'foo');
         assert.equal(record.pid, process.pid);
@@ -107,7 +107,7 @@ module.exports = {
         var spyA = spy();
         a.addHandler({ handle: spyA, level: 0 });
 
-        a.addFilter(new intel.Filter(/^foo/g));
+        a.addFilter(new rufus.Filter(/^foo/g));
 
         a.debug('bar');
         assert.equal(spyA.getCallCount(), 0);
@@ -144,7 +144,7 @@ module.exports = {
       'should trigger provided callback': function(done) {
         var n = unique();
         var a = new Logger(n);
-        a.addHandler(new intel.handlers.Null());
+        a.addHandler(new rufus.handlers.Null());
         a.propagate = false;
 
         a.debug('some foo %s baz', 'bar', function(err) {
@@ -156,7 +156,7 @@ module.exports = {
         'that resolves with a record': function(done) {
           var n = unique();
           var a = new Logger(n);
-          a.addHandler(new intel.handlers.Null());
+          a.addHandler(new rufus.handlers.Null());
           a.propagate = false;
 
           a.debug('some foo %s baz', 'bar').then(function(record) {
@@ -166,7 +166,7 @@ module.exports = {
         'that rejects with an error': function(done) {
           var n = unique();
           var a = new Logger(n);
-          var h = new intel.handlers.Null();
+          var h = new rufus.handlers.Null();
           h.emit = function(record, callback) {
             /*jshint unused:false*/
             throw new Error('foo');

@@ -10,13 +10,13 @@ const path = require('path');
 
 const Q = require('q');
 
-const intel = require('../');
+const rufus = require('../');
 
 const NOW = Date.now();
 var counter = 1;
 function tmp() {
   return path.join(os.tmpDir(),
-      'intel-' + NOW + '-' + process.pid + '-' + (counter++));
+      'rufus-' + NOW + '-' + process.pid + '-' + (counter++));
 }
 
 
@@ -32,38 +32,38 @@ module.exports = {
   'Handler': {
     'constructor': {
       'should accept options': function() {
-        var h = new intel.Handler({ level: intel.ERROR });
-        assert.equal(h.level, intel.ERROR);
+        var h = new rufus.Handler({ level: rufus.ERROR });
+        assert.equal(h.level, rufus.ERROR);
       },
       'should accept a level': function() {
-        var h = new intel.Handler(intel.WARN);
-        assert.equal(h.level, intel.WARN);
+        var h = new rufus.Handler(rufus.WARN);
+        assert.equal(h.level, rufus.WARN);
       }
     },
     'handle': {
       'requires emit to accept a callback argument': function() {
-        var h = new intel.Handler();
+        var h = new rufus.Handler();
         h.emit = function(){};
 
         assert.throws(h.handle.bind(h), function(err) {
           return err.message === 'Handler.emit requires a callback argument';
         });
 
-        h = new intel.Handler();
+        h = new rufus.Handler();
         h.emit = function(record, callback){
           record = callback;
         };
         assert.doesNotThrow(h.handle.bind(h));
       },
       'should use filters on record': function(done) {
-        var h = new intel.Handler();
+        var h = new rufus.Handler();
         var lastRecord;
         h.emit = function(record, callback){
           lastRecord = record;
           callback();
         };
 
-        h.addFilter(new intel.Filter('foo'));
+        h.addFilter(new rufus.Filter('foo'));
         h.handle({ name: 'foo' }).then(function() {
           assert.equal(lastRecord.name, 'foo');
 
@@ -73,7 +73,7 @@ module.exports = {
         }).done(done);
       },
       'should timeout if taking too long': function(done) {
-        var h = new intel.Handler({ timeout: 10 });
+        var h = new rufus.Handler({ timeout: 10 });
         h.emit = function(record, callback) {
           record = callback;
           // never call callback, so it should timeout
@@ -88,7 +88,7 @@ module.exports = {
     },
     'emit': {
       'must be overriden by subclasses': function() {
-        var h = new intel.Handler();
+        var h = new rufus.Handler();
         assert.throws(h.emit);
       }
     }
@@ -97,19 +97,19 @@ module.exports = {
     'constructor': {
       'should accept options': function() {
         var stream = {};
-        var handler = new intel.handlers.Stream({
-          level: intel.INFO,
+        var handler = new rufus.handlers.Stream({
+          level: rufus.INFO,
           stream: stream
         });
 
-        assert.equal(handler.level, intel.INFO);
+        assert.equal(handler.level, rufus.INFO);
         assert.equal(handler._stream, stream);
       },
       'should accept just a stream': function() {
         var stream = {};
-        var handler = new intel.handlers.Stream(stream);
+        var handler = new rufus.handlers.Stream(stream);
 
-        assert.equal(handler.level, intel.NOTSET);
+        assert.equal(handler.level, rufus.NOTSET);
         assert.equal(handler._stream, stream);
       }
     },
@@ -123,9 +123,9 @@ module.exports = {
           }
         };
 
-        var handler = new intel.handlers.Stream({
+        var handler = new rufus.handlers.Stream({
           stream: stream,
-          formatter: new intel.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n')
         });
         handler.handle({ message: 'foo' }).then(function() {
           assert.equal(out, 'foo\n');
@@ -141,9 +141,9 @@ module.exports = {
             fn();
           }, 1);
         };
-        var handler = new intel.handlers.Stream({
+        var handler = new rufus.handlers.Stream({
           stream: stream,
-          formatter: new intel.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n')
         });
         handler.handle({ message: 'secret' }).then(function() {
           assert.equal(out, 'secret\n');
@@ -155,17 +155,17 @@ module.exports = {
     'constructor': {
       'should accept options': function() {
         var filename = tmp();
-        var handler = new intel.handlers.File({
-          level: intel.WARN,
+        var handler = new rufus.handlers.File({
+          level: rufus.WARN,
           file: filename
         });
 
-        assert.equal(handler.level, intel.WARN);
+        assert.equal(handler.level, rufus.WARN);
         assert.equal(handler._file, filename);
       },
       'should accept a filename': function() {
         var filename = tmp();
-        var handler = new intel.handlers.File(filename);
+        var handler = new rufus.handlers.File(filename);
 
         assert.equal(handler._file, filename);
       }
@@ -173,9 +173,9 @@ module.exports = {
     'handle': {
       'should write to the file': function(done) {
         var filename = tmp();
-        var handler = new intel.handlers.File({
+        var handler = new rufus.handlers.File({
           file: filename,
-          formatter: new intel.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n')
         });
         handler.handle({ message: 'recon' }).then(function() {
           fs.readFile(filename, function(err, contents) {
@@ -190,15 +190,15 @@ module.exports = {
   'Console': {
     'constructor': {
       'should use stdout and stderr': function() {
-        var h = new intel.handlers.Console();
+        var h = new rufus.handlers.Console();
         assert.equal(h._out._stream, process.stdout);
         assert.equal(h._err._stream, process.stderr);
       }
     },
     'handle': {
       'should send low priority messages to stdout': function(done) {
-        var h = new intel.handlers.Console({
-          formatter: new intel.Formatter('%message%n')
+        var h = new rufus.handlers.Console({
+          formatter: new rufus.Formatter('%message%n')
         });
         var val;
         h._out._stream = {
@@ -209,13 +209,13 @@ module.exports = {
           }
         };
 
-        h.handle({ level: intel.INFO, message: 'oscar mike' }).then(function() {
+        h.handle({ level: rufus.INFO, message: 'oscar mike' }).then(function() {
           assert.equal(val, 'oscar mike\n');
         }).done(done);
       },
       'should send warn and higher messages to stderr': function(done) {
-        var h = new intel.handlers.Console({
-          formatter: new intel.Formatter('%message%n')
+        var h = new rufus.handlers.Console({
+          formatter: new rufus.Formatter('%message%n')
         });
         var val;
         h._err._stream = {
@@ -226,7 +226,7 @@ module.exports = {
           }
         };
 
-        h.handle({ level: intel.WARN, message: 'mayday' }).then(function() {
+        h.handle({ level: rufus.WARN, message: 'mayday' }).then(function() {
           assert.equal(val, 'mayday\n');
         }).done(done);
       }
@@ -238,10 +238,10 @@ module.exports = {
         this.timeout(5000);
 
         var filename = tmp();
-        var handler = new intel.handlers.Rotating({
+        var handler = new rufus.handlers.Rotating({
           file: filename,
           maxSize: 64,
-          formatter: new intel.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n')
         });
 
         assert.equal(handler._file, filename);
@@ -257,11 +257,11 @@ module.exports = {
         this.timeout(5000);
 
         var filename = tmp();
-        var handler = new intel.handlers.Rotating({
+        var handler = new rufus.handlers.Rotating({
           file: filename,
           maxSize: 64,
           maxFiles: 3,
-          formatter: new intel.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n')
         });
 
         handler.handle({ message: bytes(50) });
