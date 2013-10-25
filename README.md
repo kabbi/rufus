@@ -4,6 +4,24 @@
 
 This is a fork of [intel](https://github.com/seanmonstar/intel). With changes required by myself and a bit more perfomace stable (does not depends from format of log too much).
 
+## Why fork?
+
+I already got a question, why i need to fork it. I did such changes:
+
+- Log record object has static fields with known type, that is why it is not required to use e.g. `%(date)d`. So format become strong i think (idea inspired from logback jvm logger).
+- I complitly rewrite formatting. This make this logger stable perfomance. What does it mean? If you did a quick benchmark then you see that intel fastest from text based loggers, but if you change log format to be similar i use by default in rufus you will see that intel perfomance rather slow.
+
+To do not be just words, see benchmark dir that is results:
+```
+ ➜ node benchmark/logging.js 
+console.info x 1,307,523 ops/sec ±0.63% (98 runs sampled)
+rufus.info x 148,203 ops/sec ±3.59% (83 runs sampled)
+winston.info x 62,913 ops/sec ±0.78% (88 runs sampled)
+intel.info x 55,605 ops/sec ±1.87% (95 runs sampled)
+Fastest is console.info
+```
+
+I do not think anyone who understand how logging used/work should consider winston or log4js to use. Seriosly!
 
 ## Table of Contents
 
