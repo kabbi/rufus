@@ -418,11 +418,11 @@ You cannot pass a `file` and `stream` to basicConfig. If you don't provide eithe
 rufus.config({
   formatters: {
     'simple': {
-      'format': '[%(levelname)s] %(message)s',
+      'format': '[%level] %message%n',
       'colorize': true
     },
     'details': {
-      'format': '[%(date)s] %(name)s.%(levelname)s: %(message)s'
+      'format': '[%date] %logger.%level: %message%n'
     }
   },
   filters: {
