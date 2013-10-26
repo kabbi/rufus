@@ -28,7 +28,7 @@ module.exports = {
 
     'format': {
       'should output an Error stack': function() {
-        var formatter = new rufus.Formatter('%logger: %message%n%er');
+        var formatter = new rufus.Formatter('%logger: %message%n%err');
         var e = new Error('boom');
         var record = {
           name: 'foo',
