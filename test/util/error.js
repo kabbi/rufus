@@ -3,9 +3,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 const rufus = require('../../');
-rufus.basicConfig({
-  format: '%logger.%level - %message'
-});
+rufus.addHandler(new rufus.handlers.Console({
+  formatter: new rufus.Formatter('%logger.%level - %message'),
+  colorize: false
+}));
 rufus.handleExceptions(process.argv.indexOf('--noexit') === -1);
 
 setTimeout(function() {

@@ -198,7 +198,8 @@ module.exports = {
     'handle': {
       'should send low priority messages to stdout': function(done) {
         var h = new rufus.handlers.Console({
-          formatter: new rufus.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n'),
+          colorize: false
         });
         var val;
         h._out._stream = {
@@ -215,7 +216,8 @@ module.exports = {
       },
       'should send warn and higher messages to stderr': function(done) {
         var h = new rufus.handlers.Console({
-          formatter: new rufus.Formatter('%message%n')
+          formatter: new rufus.Formatter('%message%n'),
+          colorize: false
         });
         var val;
         h._err._stream = {
