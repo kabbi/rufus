@@ -13,29 +13,20 @@ module.exports = {
 
     'constructor': {
       'should accept a format string': function() {
-        var formatter = new rufus.Formatter('%(level)s');
-        assert.equal(formatter._format, '%(level)s');
-        assert.equal(formatter._datefmt, rufus.Formatter.prototype._datefmt);
-        assert.equal(formatter._colorize, false);
+        var formatter = new rufus.Formatter('%level');
+        assert.equal(formatter._format, '%level');
       },
       'should accept options': function() {
         var formatter = new rufus.Formatter({
-          format: '%level',
-          colorize: true
+          format: '%level'
         });
 
         assert.equal(formatter._format, '%level');
-        assert.equal(formatter._colorize, true);
       }
     },
 
 
     'format': {
-      'should use printf': function() {
-        var formatter = new rufus.Formatter('%logger: %message');
-        assert.equal(formatter.format({ name: 'foo', message: 'bar' }),
-            'foo: bar');
-      },
       'should output an Error stack': function() {
         var formatter = new rufus.Formatter('%logger: %message%n%er');
         var e = new Error('boom');
@@ -68,22 +59,6 @@ module.exports = {
           }
           var expected = d.getFullYear() + '-' + pad(d.getMonth() + 1);
           assert.equal(formatter.format(record), expected);
-        }
-      },
-      'colorize': {
-        'should colorize the output': function() {
-          var formatter = new rufus.Formatter({
-            format: '%level: %message',
-            colorize: true
-          });
-
-
-          var record = {
-            levelname: 'ERROR',
-            message: 'foo'
-          };
-          assert.equal(formatter.format(record),
-              '\u001b[31mERROR: foo\u001b[39m');
         }
       }
     }
