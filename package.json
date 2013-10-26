@@ -17,6 +17,7 @@
     "istanbul": "~0.1.44",
     "intel": "~0.3.0"
   },
+  "description": "Fast hierarchical text logger",
   "main": "./lib/index.js",
   "scripts": {
     "test": "mocha --check-leaks --ui exports"

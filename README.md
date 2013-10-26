@@ -1,14 +1,12 @@
 # rufus
 
-[![Build Status](https://travis-ci.org/btd/rufus.png?branch=master)](https://travis-ci.org/btd/rufus)
-
 This is a fork of [intel](https://github.com/seanmonstar/intel). With changes required by myself and a bit more perfomace stable (does not depends from format of log too much).
 
 ## Why fork?
 
 I already got a question, why i need to fork it. I did such changes:
 
-- Log record object has static fields with known type, that is why it is not required to use e.g. `%(date)d`. So format become strong i think (idea inspired from logback jvm logger).
+- Log record object has static fields with known type, that is why it is not required to use e.g. `%(message)s` - message it is string and will be a string. So format become strong i think (idea inspired from logback jvm logger).
 - I complitly rewrite formatting. This make this logger stable perfomance. What does it mean? If you did a quick benchmark then you see that intel fastest from text based loggers, but if you change log format to be similar i use by default in rufus you will see that intel perfomance rather slow.
 
 To do not be just words, see benchmark dir that is results:
@@ -53,7 +51,7 @@ I do not think anyone who understand how logging used/work should consider winst
 
 ### Using Default Logger
 
-Rufus as intel exports default root logger to start right way. It can be usefull for small applications.
+Rufus as intel exports default root logger to start right way. It can be usefull for small applications. Also this logger used as parent of all loggers (read feather).
 
 ```js
 require('rufus').info('Hello rufus');
@@ -84,7 +82,9 @@ This snippet will output only `warn` message.
 
 ### Adding a Handler
 
-The default logger will use a [ConsoleHandler](#consolehandler) if you don't specify anything else. You can add handlers to any logger:
+The default logger will use a [ConsoleHandler](#consolehandler) if you don't specify anything else.
+Hadler has own [formatter](#formatter) and can set a level - all messages from this logger with level >= handler level will be output via this handler. This allow to set very flexible configs.
+You can add handlers to any logger:
 
 ```js
 var rufus = require('rufus');
@@ -119,7 +119,7 @@ The power of logger hierarchies can seen more when using [rufus.config](#config)
 ### Logging Exceptions
 
 Any time you pass an exception (an `Error`!) to a log method as last argument, the stack
-will be included in the output (if in format presented `%er` or `%error`).
+will be included in the output (if in format presented `%err` or `%error`).
 
 ```js
 rufus.error('ermahgawd', new Error('boom'));
@@ -167,7 +167,7 @@ Just like Loggers, if a message's level is not equal to or greater than the Hand
 new rufus.handlers.Console(options);
 ```
 
-The Console handler outputs messages to the `stdio`, just like `console.log()` would.
+The Console handler outputs messages to the `stdio` or `stderr` (if level >= `WARN`), just like `console.log()` would.
 
 ### StreamHandler
 
@@ -331,7 +331,7 @@ A `Formatter` is used by a [`Handler`](#handlers) to format the message before b
 </tr>
 <tr>
     <td>
-        %er{<i>number</i>} <br>
+        %err{<i>number</i>} <br>
         %error{<i>number</i>}
     </td>
   <td>Output stack trace. Number can be: 'full', 'short', any integer. It output no more then specified number, 'full' means all lines, 'short' just one</td>
@@ -347,7 +347,7 @@ A `Formatter` is used by a [`Handler`](#handlers) to format the message before b
 Default message format is:
 
 ```js
-'[%date] %-5level %logger - %message%n%er'
+'[%date] %-5level %logger - %message%n%error'
 ```
 
 ### Date format
@@ -417,13 +417,8 @@ You cannot pass a `file` and `stream` to basicConfig. If you don't provide eithe
 ```js
 rufus.config({
   formatters: {
-    'simple': {
-      'format': '[%level] %message%n',
-      'colorize': true
-    },
-    'details': {
-      'format': '[%date] %logger.%level: %message%n'
-    }
+    'simple': '[%level] %message%n',
+    'details': '[%date] %logger.%level: %message%n'
   },
   filters: {
     'db': 'patrol.db'
@@ -432,7 +427,8 @@ rufus.config({
     'terminal': {
       'class': rufus.handlers.Console,
       'formatter': 'simple',
-      'level': rufus.VERBOSE
+      'level': rufus.VERBOSE,
+      colorize: false
     },
     'logfile': {
       'class': rufus.handlers.File,
