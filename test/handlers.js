@@ -280,9 +280,10 @@ module.exports = {
         this.timeout(5000);
 
         var filename = tmp();
-        var handler = new intel.handlers.Rotating({
+        var handler = new rufus.handlers.Rotating({
           file: filename,
-          maxSize: 64
+          maxSize: 64,
+          formatter: new rufus.Formatter('%message%n')
         });
 
         handler.handle({ message: bytes(29) }).then(function(){
