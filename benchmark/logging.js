@@ -8,6 +8,7 @@ const EE = require('events').EventEmitter;
 const winston = require('winston');
 const rufus = require('../');
 const intel = require('intel');
+const bunyan = require('bunyan');
 
 var stdout = new EE();
 stdout.write = function (out, encoding, cb) {
@@ -27,6 +28,15 @@ intel.addHandler(new intel.handlers.Stream({ stream: stdout, formatter: new inte
 winston.add(winston.transports.File, { stream: stdout });
 winston.remove(winston.transports.Console);
 
+var log = bunyan.createLogger({name: 'lr', level: 'debug'});
+
+process.stdout.write = function(msg, enc, callback) {
+  if(typeof enc === 'function' && !callback) callback = enc;
+
+  callback && callback();
+  return true;
+}
+
 var Benchmark = require('benchmark');
 
 var suite = new Benchmark.Suite('logging.info()');
@@ -43,6 +53,9 @@ suite
   })
   .add('intel.info', function() {
     intel.info('asdf');
+  })
+  .add('bunyan.info', function() {
+    log.info('asdf');
   })
 
 suite

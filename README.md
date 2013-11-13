@@ -1,27 +1,203 @@
 # rufus
 
-This is a fork of [intel](https://github.com/seanmonstar/intel). With changes required by myself and a bit more perfomace stable (does not depends from format of log too much).
+This is a fork of [intel](https://github.com/seanmonstar/intel). With changes required by myself and a bit more performance stable (does not depends from format of log too much).
 
 ## Why fork?
 
 I already got a question, why i need to fork it. I did such changes:
 
 - Log record object has static fields with known type, that is why it is not required to use e.g. `%(message)s` - message it is string and will be a string. Imho format become stronger (idea inspired from logback logger).
-- Formatting was rewritten fully (not only how it look, but how it work). With this change rufus got stable perfomance. What does it mean? If you did a quick benchmark then you see that intel is the fastest from text based loggers, but if you change log format to be similar i use by default in rufus you will see that intel perfomance rather low.
+- Formatting was rewritten fully (not only how it looks, but how it works). With this change rufus got stable performance. What does it mean? If you will do a quick benchmark you will see intel is the fastest from text based loggers, but if you change log format to be similar i have used by default in rufus you will notice that intel perfomance rather low.
 
 See benchmark dir for benchmark code, that is results:
 ```
- ➜ node benchmark/logging.js 
-console.info x 1,307,523 ops/sec ±0.63% (98 runs sampled)
-rufus.info x 148,203 ops/sec ±3.59% (83 runs sampled)
-winston.info x 62,913 ops/sec ±0.78% (88 runs sampled)
-intel.info x 55,605 ops/sec ±1.87% (95 runs sampled)
+$ node benchmark/logging.js
+console.info x 1,136,531 ops/sec ±0.74% (87 runs sampled)
+rufus.info x 178,431 ops/sec ±1.30% (97 runs sampled)
+winston.info x 62,133 ops/sec ±0.44% (99 runs sampled)
+intel.info x 53,592 ops/sec ±0.93% (96 runs sampled)
+bunyan.info x 83,840 ops/sec ±0.41% (96 runs sampled)
 Fastest is console.info
 ```
 
 I do not think anyone who understand how logging used in work should consider winston or log4js to use. Seriosly!
 
-## Table of Contents
+## Getting started
+
+1. Install
+
+`npm install --save rufus`
+
+2. Use to log everything important in your app
+
+```js
+var rufus = require('rufus');
+
+// usual way
+rufus.config(/* see below */);
+
+// in another file
+var logger = rufus.getLogger('app.file'); //notice about name!
+// every logger has own parent logger which will share part of properties with children,
+// this allow to create very flexible configurations
+// by default rufus create one logger with name root, which is parent of all loggers
+
+// arguments will be processed with util.format 
+// (if you now how to use console.log, you will know how to use rufus loggers)
+logger.info('Something good happend %s', 'yep');
+// in console you can see something like (or in file if you configure it):
+// [2013/11/13 14:26:42.487]  INFO app.file - Something good happend yep
+
+// you can log exceptions
+logger.error('Weird', new Error('boom'));
+/* [2013/11/13 14:27:59.126] ERROR app.file - Weird
+Error: boom
+    at Object.<anonymous> (/Users/den/Projects/rufus/test.js:37:22)
+    at Module._compile (module.js:456:26)
+    ... i suppress it a bit
+*/
+```
+
+3. Replace global console to have output foreign libraries via rufus
+
+`rufus.console() // that is all`
+
+## Why hierarchical loggers are so cool?
+
+// Who knows what is logback, log4j and slf4j can skip this.
+
+I already said that rufus has by default just one logger `root`. How you can use this:
+
+1. You configure parent logger and all children will use its properties
+
+```js
+rufus.config({
+	handlers: {
+		errors: {
+			class: 'file',
+			file: './logs/error.log',
+			level: rufus.ERROR
+		},
+		main: {
+			class: 'file',
+			file: './logs/main.log'
+		}
+    },
+	loggers: {
+    	root: {
+        	level: rufus.TRACE,
+            handlers: ['errors', 'main']
+        }
+    }
+});
+```
+
+With config above all your loggers will output to `./logs/main.log` and additionally errors to `./logs/error.log`.
+
+Ok, assume you want in some child logger output additional messages to another place. No problem, just add config for it:
+
+```js
+rufus.config({
+	handlers: {
+		errors: {
+			class: 'file',
+			file: './logs/error.log',
+			level: rufus.ERROR
+		},
+		main: {
+			class: 'file',
+			file: './logs/main.log'
+		},
+        console: {
+        	class: 'console'
+        }
+    },
+	loggers: {
+    	root: {
+        	level: rufus.TRACE,
+            handlers: ['errors', 'main']
+        },
+        'my_special_logger': {
+        	handlers: ['console']
+        }
+    }
+});
+```
+Now `my_special_logger` and all its children will output to console also. 
+
+Child for some logger it is logger which have such name: nameOfParent.ownChildName, so . it is hierarcy delimeter.
+
+Now you decide that do not want to pollute main log file with some logs, but still want to output them to console:
+
+```js
+rufus.config({
+	handlers: {
+		errors: {
+			class: 'file',
+			file: './logs/error.log',
+			level: rufus.ERROR
+		},
+		main: {
+			class: 'file',
+			file: './logs/main.log'
+		},
+        console: {
+        	class: 'console'
+        }
+    },
+	loggers: {
+    	root: {
+        	level: rufus.TRACE,
+            handlers: ['errors', 'main']
+        },
+        'my_special_logger': {
+        	handlers: ['console'],
+            propagate: false
+        }
+    }
+});
+```
+Now `my_special_logger` and all its children will NOT output to log files.
+
+Ok, what if you want to suppress only part of logs - filters will help you. Filter it is function that return boolean value if it accept log record, rufus come with small filter maker function. This function build filters from strings or regexps. Strings used to filter by filter name and regexps used to filter messages.
+
+```js
+rufus.config({
+	filters: {
+    	'i want only loggers with name "fun"': 'fun'
+    }
+	handlers: {
+		errors: {
+			class: 'file',
+			file: './logs/error.log',
+			level: rufus.ERROR
+		},
+		main: {
+			class: 'file',
+			file: './logs/main.log'
+            filters: ['i want only loggers with name "fun"']
+		},
+        console: {
+        	class: 'console'
+        }
+    },
+	loggers: {
+    	root: {
+        	level: rufus.TRACE,
+            handlers: ['errors', 'main']
+        },
+        'my_special_logger': {
+        	handlers: ['console'],
+            propagate: false
+        }
+    }
+});
+```
+Now you will see in main log file only 'fun' messages. You can add filters to loggers also.
+
+// I think filters require a bit more work to make them even more powerfull
+
+## Full docs
 
 - [Logging](#logging)
   - [Using Default Logger](#using-default-logger)
@@ -65,7 +241,7 @@ You can log messages using interpolation:
 require('rufus').info('Situation %s!', 'NORMAL');
 ```
 
-%s output as string, %d as number, %O using JSON.stringify.
+It uses util.format as a console.log.
 
 ### Setting the Log Level
 
@@ -149,13 +325,12 @@ require('rufus').warn('report in').then(rogerThat);
 
 Loggers build a message and try to pass the message to all of it's handlers and to it's parent. Handlers determine exactly what to do with that message, whether it's sending it to console, to a file, over a socket, or nothing at all.
 
-All Handlers have a `level`, `timeout`, and a [`Formatter`](#formatters). The `timeout` will cause the promise returned by `log` to be rejected if the handler doesn't complete within the time frame.
+All Handlers have a `level`, and a [`Formatter`](#formatters). 
 
 ```js
 new rufus.Handler({
   level: rufus.WARN, // default is NOTSET
-  formatter: new rufus.Formatter(), // default formatter
-  timeout: 5000 // default is 5seconds
+  formatter: new rufus.Formatter() // default formatter
 });
 ```
 
@@ -167,7 +342,7 @@ Just like Loggers, if a message's level is not equal to or greater than the Hand
 new rufus.handlers.Console(options);
 ```
 
-The Console handler outputs messages to the `stdio` or `stderr` (if level >= `WARN`), just like `console.log()` would.
+The Console handler outputs messages to the `stdio` or `stderr` (if level >= `WARN`), just like `console.log()` would. By default it colorize messages.
 
 ### StreamHandler
 
@@ -195,7 +370,11 @@ The File handler will write messages to a file on disk. It extends the [Stream](
 
 As a shortcut, you can pass the `file` String directly to the constructor, and all other options will just use default values.
 
+This handler support of reopening file on `SIGUSR2`, this can be helpfull if you are using `logrotate(8)`
+
 ### RotatingFileHandler
+
+I'd personally prefer linux way and use `logrotate`, but this came from `intel`.
 
 ```js
 new rufus.handlers.Rotating(options);
@@ -221,8 +400,8 @@ The Null handler will do nothing with received messages. This can useful if ther
 Adding a new custom handler that isn't included in rufus is a snap. Just make a subclass of [Handler](#handlers), and implement the `emit` method.
 
 ```js
-const util = require('util');
-const rufus = require('rufus');
+var util = require('util');
+var rufus = require('rufus');
 
 function CustomHandler(options) {
   rufus.Handler.call(this, options);
@@ -247,9 +426,9 @@ CustomHandler.prototype.emit = function customEmit(record, callback) {
 You can already plug together handlers and loggers, with varying levels, to get powerful filtering of messages. However, sometimes you really need to filter on a specific detail on a message. You can add these filters to a [Handler](#handlers) or [Logger](#logging).
 
 ```js
-rufus.addFilter(new rufus.Filter(/^foo/g));
-rufus.addFilter(new rufus.Filter('patrol.db'));
-rufus.addFilter(new rufus.Filter(filterFunction));
+rufus.addFilter(rufus.makeFilter(/^foo/g));
+rufus.addFilter(rufus.makeFilter('patrol.db'));
+rufus.addFilter(filterFunction);
 ```
 
 Filters come in 3 forms:
@@ -267,7 +446,6 @@ new rufus.Formatter(formatOrOptions);
 A `Formatter` is used by a [`Handler`](#handlers) to format the message before being sent out. An useful example is wanting logs that go to the [Console](#consolehandler) to be terse and easy to read, but messages sent to a [File](#filehandler) to include a lot more detail.
 
 - **format**: A [format](#format) string.
-- **colorize**: A boolean for whether to colorize. Default: `false`
 
 ### Format
 
@@ -506,4 +684,3 @@ If you override the console in a file deep inside some directories, you can manu
 // file: patrol/lib/utils/log.js
 require('rufus').console({ root: '/path/to/patrol' });
 ```
-

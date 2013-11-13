@@ -1,66 +1,33 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*global describe: true, it:true*/
 
-const assert = require('assert');
+var assert = require('assert');
 
-const rufus = require('../');
+var rufus = require('../');
 
-module.exports = {
-  'Filter': {
-    'with regexp': {
-      'should filter records based on message': function() {
-        var f = new rufus.Filter(/^foo/g);
+describe('Filters', function() {
+  it('should accept regexp', function() {// regex filter check message
+    var f = rufus.makeFilter(/^foo/);
 
-        assert(!f.filter({
-          name: 'foo',
-          message: 'bar baz boom'
-        }));
+    assert.ok(!f({ message: 'not foobar' }));
+    assert.ok(f({ message: 'foobar' }));
+  });
 
-        assert(!f.filter({
-          name: 'bar',
-          message: 'not foobar'
-        }));
+  it('should accept string', function() {// string filter check name
+    var f = rufus.makeFilter('foo.bar');
 
-        assert(f.filter({
-          name: 'bar',
-          message: 'foobar'
-        }));
-      }
-    },
-    'with string': {
-      'should filter records based on logger name': function() {
-        var f = new rufus.Filter('foo.bar');
+    assert(f({
+      name: 'foo.bar'
+    }));
 
-        assert(f.filter({
-          name: 'foo.bar'
-        }));
+    assert(f({
+      name: 'foo.bar.baz'
+    }));
 
-        assert(f.filter({
-          name: 'foo.bar.baz'
-        }));
-
-        assert(!f.filter({
-          name: 'food.bar',
-        }));
-      }
-    },
-    'with function': {
-      'should filter records': function() {
-        var f = new rufus.Filter(function(record) {
-          return record.name === 'foo' && record.message.indexOf('bar') !== -1;
-        });
-
-        assert(f.filter({
-          name: 'foo',
-          message: 'bar baz boom'
-        }));
-
-        assert(!f.filter({
-          name: 'foo',
-          message: 'boom'
-        }));
-      }
-    }
-  }
-};
+    assert(!f({
+      name: 'food.bar'
+    }));
+  });
+});

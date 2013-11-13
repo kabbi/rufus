@@ -2,14 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const assert = require('assert');
-const os = require('os');
-const path = require('path');
-const util = require('util');
+var assert = require('assert');
+var os = require('os');
+var path = require('path');
+var util = require('util');
 
-const rufus = require('../');
+var rufus = require('../');
 
-const NOW = Date.now();
+var NOW = Date.now();
 var counter = 1;
 function tmp() {
   return path.join(os.tmpDir(),
@@ -38,69 +38,79 @@ SpyHandler.prototype.emit = function spyEmit(record, callback) {
 
 var oldBasic;
 var oldLevel;
-module.exports = {
-  'basicConfig': {
-    'before': function() {
-      oldBasic = rufus.basicConfig;
-      oldLevel = rufus._level;
-    },
-    'root logger calls basicConfig': function(done) {
-      var val;
-      var stream = {
-        write: function(out, cb) {
-          val = out;
-          cb();
-        }
-      };
+describe('basicConfig', function() {
+  beforeEach(function() {
+    oldBasic = rufus.basicConfig;
+    oldLevel = rufus._level;
 
-      rufus.basicConfig = function() {
-        oldBasic({ stream: stream, format: '%message' });
-      };
+    rufus._handlers = [];
+  });
 
-      rufus.info('danger').then(function() {
-        assert.equal(val, 'danger');
-        assert.equal(rufus._level, oldLevel);
-      }).done(done);
+  afterEach(function() {
+    rufus.basicConfig = oldBasic;
+    rufus._level = oldLevel;
+  });
 
-    },
-    'only works once': function() {
-      rufus.basicConfig();
+  it('root logger calls basicConfig', function(done) {
+    var val;
+    var stream = {
+      write: function(out, cb) {
+        val = out;
+        cb();
+      }
+    };
+
+    rufus.basicConfig = function() {
+      oldBasic({ stream: stream, format: '%message' });
+    };
+
+    rufus.info('danger').then(function() {
+      assert.equal(val, 'danger');
       assert.equal(rufus._level, oldLevel);
+    }).done(done);
 
-      rufus.basicConfig({ level: 'critical' });
-      assert.equal(rufus._handlers.length, 1);
-      assert.equal(rufus._level, oldLevel);
-    },
-    'works with file option': function() {
-      var name = tmp();
-      rufus.basicConfig({ file: name });
-      assert.equal(rufus._handlers.length, 1);
-      assert.equal(rufus._handlers[0]._file, name);
-    },
-    'works with level': function() {
-      rufus.basicConfig({ level: 'error' });
-      assert.equal(rufus._level, rufus.ERROR);
-    },
-    'works with format': function() {
-      rufus.basicConfig({ format: '%(foo)s'});
-      assert.equal(rufus._handlers[0]._formatter._format, '%(foo)s');
-    },
-    'afterEach': function() {
-      rufus.basicConfig = oldBasic;
-      rufus.setLevel(oldLevel);
-      rufus._handlers = [];
-    }
-  },
-  'config': {
-    'should be able to configure logging': function(done) {
+  });
+
+  it('only works once', function() {
+    rufus.basicConfig();
+    assert.equal(rufus._level, oldLevel);
+
+    rufus.basicConfig({ level: 'critical' });
+    assert.equal(rufus._handlers.length, 1);
+    assert.equal(rufus._level, oldLevel);
+  });
+
+  it('works with file option', function() {
+    var name = tmp();
+    rufus.basicConfig({ file: name });
+    assert.equal(rufus._handlers.length, 1);
+    assert.equal(rufus._handlers[0]._file, name);
+  });
+
+
+  it('works with level', function() {
+    rufus.basicConfig({ level: 'error' });
+    assert.equal(rufus._level, rufus.ERROR);
+  });
+
+  it('works with format', function() {
+    rufus.basicConfig({ format: '%msg'});
+    assert.equal(rufus._handlers[0]._formatter._format, '%msg');
+  });
+
+  it('afterEach', function() {
+    rufus.basicConfig = oldBasic;
+    rufus.setLevel(oldLevel);
+    rufus._handlers = [];
+  });
+
+
+  describe('config', function () {
+    it('should be able to configure logging', function (done) {
       rufus.config({
         formatters: {
-          'basic': {
-            'format': '%message'
-          },
-          'foo': {
-            'format': 'foo! %level: %message'
-          }
+          'basic': '%message',
+          'foo': 'foo! %level: %message'
         },
         filters: {
           'user': /\buser\b/g
@@ -137,27 +147,28 @@ module.exports = {
       assert.equal(log._handlers.length, 1);
       assert(!log.propagate);
 
-      var msg = handler.format({ message: 'hi', levelname: 'BAR'});
+      var msg = handler.format({ message: 'hi', args: [ 'hi' ], levelname: 'BAR'});
       assert.equal(msg, 'foo! BAR: hi');
 
-      log.debug('user').then(function() {
+      log.debug('user').then(function () {
         assert.equal(handler.spy.getCallCount(), 0);
 
         return log.info('user foo');
-      }).then(function() {
-        assert.equal(handler.spy.getCallCount(), 1);
-        assert.equal(handler.spy.getLastArgs()[0].message, 'user foo');
+      }).then(function () {
+          assert.equal(handler.spy.getCallCount(), 1);
+          assert.equal(handler.spy.getLastArgs()[0].message, 'user foo');
 
-        return log.info('ignore me');
-      }).then(function() {
-        assert.equal(handler.spy.getCallCount(), 1);
-      }).done(done);
-    },
-    'should be able to config with just JSON': function() {
+          return log.info('ignore me');
+        }).then(function () {
+          assert.equal(handler.spy.getCallCount(), 1);
+        }).done(done);
+    });
+
+    it('should be able to config with just JSON', function () {
       rufus.config(require('./util/config.json'));
 
       var log = rufus.getLogger('test.config.json');
       assert.equal(log._handlers.length, 2);
-    }
-  }
-};
+    });
+  });
+});

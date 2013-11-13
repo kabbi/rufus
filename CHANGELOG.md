@@ -1,5 +1,13 @@
 # rufus ChangeLog
 
+## 0.5.0 - 2013-11-13
+
+- General cleanup
+- Remove timeout for handlers
+- Improve perfomance
+- Use util.format instead of own printf
+- More accurate console replacement
+
 ## v0.3.0 - 2013-10-24
 
 - added intel.handlers.Rotating

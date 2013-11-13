@@ -9,18 +9,18 @@
   "devDependencies": {
     "jshint": "2.3.0",
     "mocha": "1.13.0",
-    "walk": "2.2.1",
-    "winston": "0.7.2",
-    "benchmark": "1.0.0",
-    "log4js": "0.6.9",
-    "q": "~0.9.7",
+    "sinon": "~1.7.3",
     "istanbul": "~0.1.44",
-    "intel": "~0.3.0"
+
+    "benchmark": "1.0.0",
+    "intel": "latest",
+    "winston": "latest",
+    "bunyan": "latest"
   },
   "description": "Fast hierarchical text logger",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "mocha --check-leaks --ui exports"
+    "test": "make test"
   },
   "bugs": "https://github.com/btd/rufus/issues",
   "homepage": "http://btd.github.io/rufus",

@@ -1,189 +1,182 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+/*global describe: true, it:true*/
 
-const assert = require('assert');
-const cp = require('child_process');
-const path = require('path');
-const util = require('util');
+var assert = require('assert');
+var sinon = require('sinon');
 
-const rufus = require('../');
-const Logger = rufus.Logger;
+var rufus = require('../');
+var Logger = rufus.Logger;
 
 var __counter = 1;
 function unique() {
   return "u-" + __counter++;
 }
 
-function spy(cb) {
-  var args = [];
-  var fn = function() {
-    args.push(arguments);
-    if (cb) {
-      return cb.apply(this, arguments);
-    }
+function spyHandler(level, callback) {
+  if(typeof level !== 'number') level = 0;
+
+  var stub = sinon.spy(callback);
+
+  return {
+    handle: stub,
+    level: level
   };
-  fn.getCallCount = function() { return args.length; };
-  fn.getLastArgs = function() { return args[args.length - 1]; };
-  return fn;
 }
 
-function aliasLog(alias, shouldCall) {
-  return function() {
-    var n = unique();
-    var a = new Logger(n);
-    a.propagte = false;
-    
-    var args;
-    a[shouldCall] = function() {
-      args = [].slice.call(arguments);
+describe('Logger', function() {
+  it('should return the same logger when created with the same name', function() {
+    var name = unique();
+
+    var logger1 = new Logger(name);
+    var logger2 = new Logger(name);
+
+    assert.equal(logger1, logger2);
+  });
+
+  it('should allow add handlers and remove them', function() {
+    var logger = new Logger(unique());
+    var handler = new rufus.handlers.Null();
+
+    logger.addHandler(handler);
+    assert.equal(logger.getHandlers().length, 1);
+
+    logger.removeHandler(handler);
+    assert.equal(logger.getHandlers().length, 0);
+  });
+
+  it('should set by default for child logger log level of its direct parent', function() {
+    var parentName = unique();
+    var parent = new Logger(parentName);
+    parent.setLevel('error');
+
+    var childName = parentName + '.' + unique();
+    var child = new Logger(childName);
+
+    assert.equal(child.getEffectiveLevel(), rufus.ERROR);
+  });
+
+  it('should make record', function() {
+    var name = unique();
+    var logger = new Logger(name);
+
+    var msg = 'foo';
+    var level = rufus.DEBUG;
+    var err = new Error();
+    var args = [ msg, err ];
+    var record = logger.makeRecord(name, level, msg, args.slice());
+
+    assert.equal(record.name, name);
+    assert.equal(record.level, level);
+    assert.equal(record.message, msg);
+    assert.equal(record.levelname, 'DEBUG');
+    assert.equal(record.pid, process.pid);
+    assert.equal(record.args.length, args.length - 1); //it is because last arg is Error
+    assert.equal(record.args[0], msg);
+    assert.equal(record.err, err);
+  });
+
+  it('should call its handlers', function() {
+    var logger = new Logger(unique());
+    logger.propagate = false;
+
+    var handler = spyHandler();
+    logger.addHandler(handler);
+
+    logger.log(rufus.INFO, 'foo');
+    assert.ok(handler.handle.called);
+
+    logger.info('foo');
+    assert.ok(handler.handle.calledTwice);
+  });
+
+  it('should call parent handlers when propagate is true', function() {
+    var parentName = unique();
+    var parent = new Logger(parentName);
+    parent.propagate = false; //stop there
+
+    var childName = parentName + '.' + unique();
+    var child = new Logger(childName);
+
+    var parentHandler = spyHandler();
+    var childHandler = spyHandler();
+
+    parent.addHandler(parentHandler);
+    child.addHandler(childHandler);
+
+    child.info('foo');
+
+    assert.ok(childHandler.handle.calledOnce);
+    assert.ok(parentHandler.handle.calledOnce);
+  });
+
+  it('should call handlers which level is more then record level', function() {
+    var logger = new Logger(unique());
+    logger.propagate = false;
+
+    var handlerError = spyHandler(rufus.ERROR);
+    var handlerTrace = spyHandler(rufus.TRACE);
+
+    logger.addHandler(handlerError).addHandler(handlerTrace);
+
+    logger.info('foo');
+
+    assert.ok(handlerTrace.handle.calledOnce);
+    assert.ok(!handlerError.handle.called);
+  });
+
+  it('should call handlers when record level more or eql logger level', function() {
+    var logger = new Logger(unique());
+    logger.propagate = false;
+    logger.setLevel(rufus.INFO);
+
+    var handler = spyHandler();
+    logger.addHandler(handler);
+
+    logger.info('foo');
+    logger.error('foo');
+    logger.trace('foo');
+
+    assert.ok(handler.handle.calledTwice);
+  });
+
+  it('should allow to filter log records', function() {
+    var logger = new Logger(unique());
+    logger.propagate = false;
+
+    var handler = spyHandler();
+    logger.addHandler(handler);
+
+    logger.addFilter(rufus.makeFilter(/^foo/));
+
+    // message not pass filter
+    logger.info('bar');
+    assert.ok(!handler.handle.called);
+
+    logger.info('fooooo');
+    assert.ok(handler.handle.calledOnce);
+  });
+
+  it('should return promise that rejects when one of handlers fail', function(done) {//TODO
+    var logger = new Logger(unique());
+    logger.propagate = false;
+
+    var h = new rufus.handlers.Null();
+    h.emit = function(record, callback) {
+      throw new Error('foo');
     };
 
-    a[alias]('foo', 'bar');
+    logger.addHandler(h);
 
-    assert.equal(args[0], 'foo');
-    assert.equal(args[1], 'bar');
-  };
-}
-
-function spawn(exitOnError, done) {
-  var exec = 'node ' + path.join(__dirname, 'util', 'error.js');
-  if (exitOnError) {
-    exec += ' --noexit';
-  }
-  cp.exec(exec, done);
-}
+    logger.info('bar').then(null, function(err) {
+      assert.equal(err.message, 'foo');
+    }).done(done);
+  });
+});
 
 module.exports = {
   'Logger': {
-    'constructor': {
-      'should return the same instance for the same name': function() {
-        var n = unique();
-        var a = new Logger(n);
-        var a2 = new Logger(n);
-
-        assert.equal(a, a2);
-      }
-    },
-    'removeHandler': function() {
-      var n = unique();
-      var a = new Logger(n);
-      a.addHandler(new rufus.handlers.Null());
-      assert.equal(a._handlers.length, 1);
-      a.removeHandler(a._handlers[0]);
-      assert.equal(a._handlers.length, 0);
-    },
-    'getEffectiveLevel': {
-      'should have an effective level': function() {
-        var n = unique();
-        var a = new Logger(n);
-        a.setLevel('error');
-
-        var n2 = n + '.' + unique();
-        var b = new Logger(n2);
-
-        assert.equal(b.getEffectiveLevel(), Logger.ERROR);
-      }
-    },
-    'makeRecord': {
-      'should make a record with a simple message': function() {
-        var n = unique();
-        var a = new Logger(n);
-        var record = a.makeRecord(n, rufus.DEBUG, "foo", []);
-        assert.equal(record.name, n);
-        assert.equal(record.level, rufus.DEBUG);
-        assert.equal(record.levelname, 'DEBUG');
-        assert.equal(record.message, 'foo');
-        assert.equal(record.pid, process.pid);
-        assert.equal(record.args.length, 0);
-      }
-    },
-    'log': {
-      'should be usable without alias': function() {
-        var n = unique();
-        var a = new Logger(n);
-        a.propagate = false;
-
-        var spyA = spy();
-        a.addHandler({ handle: spyA, level: 0 });
-
-        a.log(rufus.INFO, 'foo');
-
-        assert.equal(spyA.getCallCount(), 1);
-      },
-      'should filter messages': function() {
-        var n = unique();
-        var a = new Logger(n);
-        a.propagate = false;
-
-        var spyA = spy();
-        a.addHandler({ handle: spyA, level: 0 });
-
-        a.addFilter(new rufus.Filter(/^foo/g));
-
-        a.debug('bar');
-        assert.equal(spyA.getCallCount(), 0);
-
-        a.info('foobar');
-        assert.equal(spyA.getCallCount(), 1);
-      },
-      'should propagate': function() {
-        // C should propagate to B, but B should not propagate to A,
-        // since we set propagate to false.
-        var n = unique();
-        var a = new Logger(n);
-        var spyA = spy();
-        a.addHandler({ handle: spyA, level: 0 });
-
-        var n2 = n + '.' + unique();
-        var b = new Logger(n2);
-        b.propagate = false;
-        var spyB = spy();
-        b.addHandler({ handle: spyB, level: 0 });
-
-        var n3 = n2 + '.' + unique();
-        var c = new Logger(n3);
-        var spyC = spy();
-        c.addHandler({ handle: spyC, level: 0 });
-
-
-        c.debug('one');
-
-        assert.equal(spyA.getCallCount(), 0);
-        assert.equal(spyB.getCallCount(), 1);
-        assert.equal(spyC.getCallCount(), 1);
-      },
-      'should return a promise': {
-        'that resolves': function(done) {
-          var n = unique();
-          var a = new Logger(n);
-          a.addHandler(new rufus.handlers.Null());
-          a.propagate = false;
-
-          a.debug('some foo %s baz', 'bar').done(done);
-        },
-        'that rejects with an error': function(done) {
-          var n = unique();
-          var a = new Logger(n);
-          var h = new rufus.handlers.Null();
-          h.emit = function(record, callback) {
-            /*jshint unused:false*/
-            throw new Error('foo');
-          };
-
-          a.addHandler(h);
-          a.propagate = false;
-
-          a.debug('some foo %s baz', 'bar').then(null, function(reason) {
-            assert.equal(reason.message, 'foo');
-          }).done(done);
-        }
-      },
-      'warning should alias warn': aliasLog('warning', 'warn'),
-      'o_O should alias warn': aliasLog('o_O', 'warn'),
-      'O_O should alias error': aliasLog('O_O', 'error')
-    },
-
     'handleExceptions': {
       'should catch uncaughtErrors': function(done) {
         this.slow(300);
