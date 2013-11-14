@@ -68,7 +68,7 @@ Error: boom
 
 I already said that rufus has by default just one logger `root`. How you can use this:
 
-1. You configure parent logger and all children will use its properties
+You configure parent logger and all children will use its properties
 
 ```js
 rufus.config({
