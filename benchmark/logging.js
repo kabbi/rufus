@@ -9,6 +9,7 @@ const winston = require('winston');
 const rufus = require('../');
 const intel = require('intel');
 const bunyan = require('bunyan');
+const log4js = require('log4js').getLogger();
 
 var stdout = new EE();
 stdout.write = function (out, encoding, cb) {
@@ -56,6 +57,9 @@ suite
   })
   .add('bunyan.info', function() {
     log.info('asdf');
+  })
+  .add('log4js.info', function() {
+    log4js.info('asdf');
   })
 
 suite
