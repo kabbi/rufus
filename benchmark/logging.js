@@ -26,7 +26,7 @@ var _console = new Console(stdout, stdout);
 rufus.addHandler(new rufus.handlers.Stream({ stream: stdout, formatter: new rufus.Formatter('[%date] %logger:: %message') }));
 intel.addHandler(new intel.handlers.Stream({ stream: stdout, formatter: new intel.Formatter('[%(date)s] %(name)s:: %(message)s') }));
 
-winston.add(winston.transports.File, { stream: stdout });
+winston.add(winston.transports.File, { stream: stdout, timestamp: true });
 winston.remove(winston.transports.Console);
 
 var log = bunyan.createLogger({name: 'lr', level: 'debug'});

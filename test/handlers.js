@@ -16,7 +16,7 @@ const NOW = Date.now();
 var counter = 1;
 function tmp() {
   return path.join(os.tmpDir(),
-      'rufus-' + NOW + '-' + process.pid + '-' + (counter++));
+    'rufus-' + NOW + '-' + process.pid + '-' + (counter++));
 }
 
 
@@ -28,270 +28,273 @@ function bytes(x) {
   return b.toString();
 }
 
-module.exports = {
-  'Handler': {
-    'constructor': {
-      'should accept options': function() {
-        var h = new rufus.Handler({ level: rufus.ERROR });
-        assert.equal(h.level, rufus.ERROR);
-      },
-      'should accept a level': function() {
-        var h = new rufus.Handler(rufus.WARN);
-        assert.equal(h.level, rufus.WARN);
-      }
-    },
-    'handle': {
-      'requires emit to accept a callback argument': function() {
-        var h = new rufus.Handler();
-        h.emit = function(){};
+describe('Handler', function () {
+  describe('constructor', function () {
+    it('should accept options', function () {
+      var h = new rufus.Handler({ level: rufus.ERROR });
+      assert.equal(h.level, rufus.ERROR);
+    });
 
-        assert.throws(h.handle.bind(h), function(err) {
-          return err.message === 'Handler.emit requires a callback argument';
-        });
+    it('should accept a level', function () {
+      var h = new rufus.Handler(rufus.WARN);
+      assert.equal(h.level, rufus.WARN);
+    });
+  });
 
-        h = new rufus.Handler();
-        h.emit = function(record, callback){
-          record = callback;
-        };
-        assert.doesNotThrow(h.handle.bind(h));
-      },
-      'should use filters on record': function(done) {
-        var h = new rufus.Handler();
-        var lastRecord;
-        h.emit = function(record, callback){
-          lastRecord = record;
-          callback();
-        };
+  describe('handle', function () {
+    it('requires emit to accept a callback argument', function () {
+      var h = new rufus.Handler();
+      h.emit = function () {
+      };
 
-        h.addFilter(new rufus.Filter('foo'));
-        h.handle({ name: 'foo' }).then(function() {
-          assert.equal(lastRecord.name, 'foo');
+      assert.throws(h.handle.bind(h), function (err) {
+        return err.message === 'Handler.emit requires a callback argument';
+      });
 
-          return h.handle({ name: 'foobar' });
-        }).then(function() {
+      h = new rufus.Handler();
+      h.emit = function (record, callback) {
+        record = callback;
+      };
+      assert.doesNotThrow(h.handle.bind(h));
+    });
+
+    it('should use filters on record', function (done) {
+      var h = new rufus.Handler();
+      var lastRecord;
+      h.emit = function (record, callback) {
+        lastRecord = record;
+        callback();
+      };
+
+      h.addFilter(rufus.makeFilter('foo'));
+      h.handle({ name: 'foo' }).then(function () {
+        assert.equal(lastRecord.name, 'foo');
+
+        return h.handle({ name: 'foobar' });
+      }).then(function () {
           assert.notEqual(lastRecord.name, 'foobar');
         }).done(done);
-      },
-      'should timeout if taking too long': function(done) {
-        var h = new rufus.Handler({ timeout: 10 });
-        h.emit = function(record, callback) {
-          record = callback;
-          // never call callback, so it should timeout
-        };
+    });
+  });
 
-        h.handle({ message: 'foo' }).then(function() {
-          assert(false); // shouldn't be called
-        }, function(reason) {
-          assert(reason);
-        }).done(done);
-      }
-    },
-    'emit': {
-      'must be overriden by subclasses': function() {
-        var h = new rufus.Handler();
-        assert.throws(h.emit);
-      }
-    }
-  },
-  'Stream': {
-    'constructor': {
-      'should accept options': function() {
-        var stream = {};
-        var handler = new rufus.handlers.Stream({
-          level: rufus.INFO,
-          stream: stream
-        });
+  describe('emit', function () {
+    it('must be overriden by subclasses', function () {
+      var h = new rufus.Handler();
+      assert.throws(h.emit);
+    });
+  });
+});
 
-        assert.equal(handler.level, rufus.INFO);
-        assert.equal(handler._stream, stream);
-      },
-      'should accept just a stream': function() {
-        var stream = {};
-        var handler = new rufus.handlers.Stream(stream);
+describe('Stream', function () {
+  describe('constructor', function () {
+    it('should accept options', function () {
+      var stream = {};
+      var handler = new rufus.handlers.Stream({
+        level: rufus.INFO,
+        stream: stream
+      });
 
-        assert.equal(handler.level, rufus.NOTSET);
-        assert.equal(handler._stream, stream);
-      }
-    },
-    'emit': {
-      'should write message to stream': function(done) {
-        var out;
-        var stream = {
-          write: function(msg, fn) {
-            out = msg;
-            fn();
-          }
-        };
+      assert.equal(handler.level, rufus.INFO);
+      assert.equal(handler._stream, stream);
+    });
 
-        var handler = new rufus.handlers.Stream({
-          stream: stream,
-          formatter: new rufus.Formatter('%message%n')
-        });
-        handler.handle({ message: 'foo' }).then(function() {
-          assert.equal(out, 'foo\n');
+    it('should accept just a stream', function () {
+      var stream = {};
+      var handler = new rufus.handlers.Stream(stream);
+
+      assert.equal(handler.level, rufus.NOTSET);
+      assert.equal(handler._stream, stream);
+    });
+  });
+
+  describe('emit', function () {
+    it('should write message to stream', function (done) {
+      var out;
+      var stream = {
+        write: function (msg, fn) {
+          out = msg;
+          fn();
+        }
+      };
+
+      var handler = new rufus.handlers.Stream({
+        stream: stream,
+        formatter: new rufus.Formatter('%message%n')
+      });
+      handler.handle({ message: 'foo', args: ['foo'] }).then(function () {
+        assert.equal(out, 'foo\n');
+        done();
+      });
+    });
+
+    it('should wait for flush on slow streams', function (done) {
+      var out;
+      var stream = new EventEmitter();
+      stream.write = function write(data, fn) {
+        setTimeout(function () {
+          out = data;
+          fn();
+        }, 1);
+      };
+      var handler = new rufus.handlers.Stream({
+        stream: stream,
+        formatter: new rufus.Formatter('%message%n')
+      });
+      handler.handle({ message: 'secret', args: ['secret'] }).then(function () {
+        assert.equal(out, 'secret\n');
+      }).done(done);
+    });
+  });
+});
+
+describe('File', function () {
+  describe('constructor', function () {
+    it('should accept options', function () {
+      var filename = tmp();
+      var handler = new rufus.handlers.File({
+        level: rufus.WARN,
+        file: filename
+      });
+
+      assert.equal(handler.level, rufus.WARN);
+      assert.equal(handler._file, filename);
+    });
+
+    it('should accept a filename', function () {
+      var filename = tmp();
+      var handler = new rufus.handlers.File(filename);
+
+      assert.equal(handler._file, filename);
+    });
+  });
+
+  describe('handle', function () {
+    it('should write to the file', function (done) {
+      var filename = tmp();
+      var handler = new rufus.handlers.File({
+        file: filename,
+        formatter: new rufus.Formatter('%message%n')
+      });
+      handler.handle({ message: 'recon', args: ['recon'] }).then(function () {
+        fs.readFile(filename, function (err, contents) {
+          assert.ifError(err);
+          assert.equal(contents.toString(), 'recon\n');
           done();
         });
-      },
-      'should wait for flush on slow streams': function(done) {
-        var out;
-        var stream = new EventEmitter();
-        stream.write = function write(data, fn) {
-          setTimeout(function() {
-            out = data;
-            fn();
-          }, 1);
-        };
-        var handler = new rufus.handlers.Stream({
-          stream: stream,
-          formatter: new rufus.Formatter('%message%n')
-        });
-        handler.handle({ message: 'secret' }).then(function() {
-          assert.equal(out, 'secret\n');
-        }).done(done);
-      }
-    }
-  },
-  'File': {
-    'constructor': {
-      'should accept options': function() {
-        var filename = tmp();
-        var handler = new rufus.handlers.File({
-          level: rufus.WARN,
-          file: filename
-        });
+      }).done();
+    });
+  });
+});
 
-        assert.equal(handler.level, rufus.WARN);
-        assert.equal(handler._file, filename);
-      },
-      'should accept a filename': function() {
-        var filename = tmp();
-        var handler = new rufus.handlers.File(filename);
+describe('Console', function () {
+  describe('constructor', function () {
+    it('should use stdout and stderr', function () {
+      var h = new rufus.handlers.Console();
+      assert.equal(h._out._stream, process.stdout);
+      assert.equal(h._err._stream, process.stderr);
+    });
+  });
 
-        assert.equal(handler._file, filename);
-      }
-    },
-    'handle': {
-      'should write to the file': function(done) {
-        var filename = tmp();
-        var handler = new rufus.handlers.File({
-          file: filename,
-          formatter: new rufus.Formatter('%message%n')
-        });
-        handler.handle({ message: 'recon' }).then(function() {
-          fs.readFile(filename, function(err, contents) {
-            assert.ifError(err);
-            assert.equal(contents.toString(), 'recon\n');
-            done();
-          });
-        }).done();
-      }
-    }
-  },
-  'Console': {
-    'constructor': {
-      'should use stdout and stderr': function() {
-        var h = new rufus.handlers.Console();
-        assert.equal(h._out._stream, process.stdout);
-        assert.equal(h._err._stream, process.stderr);
-      }
-    },
-    'handle': {
-      'should send low priority messages to stdout': function(done) {
-        var h = new rufus.handlers.Console({
-          formatter: new rufus.Formatter('%message%n'),
-          colorize: false
-        });
-        var val;
-        h._out._stream = {
-          write: function(out, callback) {
-            val = out;
-            callback();
-            return true;
-          }
-        };
+  describe('handle', function () {
+    it('should send low priority messages to stdout', function (done) {
+      var h = new rufus.handlers.Console({
+        formatter: new rufus.Formatter('%message%n'),
+        colorize: false
+      });
+      var val;
+      h._out._stream = {
+        write: function (out, callback) {
+          val = out;
+          callback();
+          return true;
+        }
+      };
 
-        h.handle({ level: rufus.INFO, message: 'oscar mike' }).then(function() {
-          assert.equal(val, 'oscar mike\n');
-        }).done(done);
-      },
-      'should send warn and higher messages to stderr': function(done) {
-        var h = new rufus.handlers.Console({
-          formatter: new rufus.Formatter('%message%n'),
-          colorize: false
-        });
-        var val;
-        h._err._stream = {
-          write: function(out, callback) {
-            val = out;
-            callback();
-            return true;
-          }
-        };
+      h.handle({ level: rufus.INFO, message: 'oscar mike', args: ['oscar mike'] }).then(function () {
+        assert.equal(val, 'oscar mike\n');
+      }).done(done);
+    });
 
-        h.handle({ level: rufus.WARN, message: 'mayday' }).then(function() {
-          assert.equal(val, 'mayday\n');
-        }).done(done);
-      }
-    }
-  },
-  'RotatingFileHandler': {
-    'handle': {
-      'with maxSize should create new files': function(done) {
-        this.timeout(5000);
+    it('should send warn and higher messages to stderr', function (done) {
+      var h = new rufus.handlers.Console({
+        formatter: new rufus.Formatter('%message%n'),
+        colorize: false
+      });
+      var val;
+      h._err._stream = {
+        write: function (out, callback) {
+          val = out;
+          callback();
+          return true;
+        }
+      };
 
-        var filename = tmp();
-        var handler = new rufus.handlers.Rotating({
-          file: filename,
-          maxSize: 64,
-          formatter: new rufus.Formatter('%message%n')
-        });
+      h.handle({ level: rufus.WARN, message: 'mayday', args: ['mayday'] }).then(function () {
+        assert.equal(val, 'mayday\n');
+      }).done(done);
+    });
+  });
+});
 
-        assert.equal(handler._file, filename);
-        handler.handle({ message: bytes(60) });
-        handler.handle({ message: bytes(50) });
-        handler.handle({ message: bytes(45) }).then(function() {
-          assert.equal(fs.statSync(filename).size, 46);
-          assert.equal(fs.statSync(filename + '.1').size, 51);
-          assert.equal(fs.statSync(filename + '.2').size, 61);
-        }).done(done);
-      },
-      'with maxFiles should not create more than max': function(done) {
-        this.timeout(5000);
+describe('RotatingFileHandler', function () {
+  describe('handle', function () {
+    it('with maxSize should create new files', function (done) {
+      this.timeout(5000);
 
-        var filename = tmp();
-        var handler = new rufus.handlers.Rotating({
-          file: filename,
-          maxSize: 64,
-          maxFiles: 3,
-          formatter: new rufus.Formatter('%message%n')
-        });
+      var filename = tmp();
+      var handler = new rufus.handlers.Rotating({
+        file: filename,
+        maxSize: 64,
+        formatter: new rufus.Formatter('%message%n')
+      });
 
-        handler.handle({ message: bytes(50) });
-        handler.handle({ message: bytes(55) });
-        handler.handle({ message: bytes(60) });
-        handler.handle({ message: bytes(45) }).then(function() {
-          assert.equal(fs.statSync(filename).size, 46);
-          assert.equal(fs.statSync(filename + '.1').size, 61);
-          assert.equal(fs.statSync(filename + '.2').size, 56);
-          assert(!fs.existsSync(filename + '.3'));
-        }).done(done);
-      },
-      'should continue to write after buffer is flushed': function(done) {
-        this.timeout(5000);
+      assert.equal(handler._file, filename);
+      handler.handle({ message: bytes(60), args: [bytes(60)] });
+      handler.handle({ message: bytes(50), args: [bytes(50)] });
+      handler.handle({ message: bytes(45), args: [bytes(45)] }).then(function () {
+        assert.equal(fs.statSync(filename).size, 46);
+        assert.equal(fs.statSync(filename + '.1').size, 51);
+        assert.equal(fs.statSync(filename + '.2').size, 61);
+      }).done(done);
+    });
 
-        var filename = tmp();
-        var handler = new rufus.handlers.Rotating({
-          file: filename,
-          maxSize: 64,
-          formatter: new rufus.Formatter('%message%n')
-        });
+    it('with maxFiles should not create more than max', function (done) {
+      this.timeout(5000);
 
-        handler.handle({ message: bytes(29) }).then(function(){
-          return handler.handle({ message: bytes(31) });
-        }).then(function(){
+      var filename = tmp();
+      var handler = new rufus.handlers.Rotating({
+        file: filename,
+        maxSize: 64,
+        maxFiles: 3,
+        formatter: new rufus.Formatter('%message%n')
+      });
+
+      handler.handle({ message: bytes(50), args: [bytes(50)] });
+      handler.handle({ message: bytes(55), args: [bytes(55)] });
+      handler.handle({ message: bytes(60), args: [bytes(60)] });
+      handler.handle({ message: bytes(45), args: [bytes(45)] }).then(function () {
+        assert.equal(fs.statSync(filename).size, 46);
+        assert.equal(fs.statSync(filename + '.1').size, 61);
+        assert.equal(fs.statSync(filename + '.2').size, 56);
+        assert(!fs.existsSync(filename + '.3'));
+      }).done(done);
+    });
+
+    it('should continue to write after buffer is flushed', function (done) {
+      this.timeout(5000);
+
+      var filename = tmp();
+      var handler = new rufus.handlers.Rotating({
+        file: filename,
+        maxSize: 64,
+        formatter: new rufus.Formatter('%message%n')
+      });
+
+      handler.handle({ message: bytes(29), args: [bytes(29)] }).then(function () {
+        return handler.handle({ message: bytes(31), args: [bytes(31)] });
+      }).then(function () {
           assert.equal(fs.statSync(filename).size, 62);
         }).done(done);
-      }
-    }
-  }
-};
+    });
+  });
+});

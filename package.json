@@ -1,16 +1,16 @@
 {
   "name": "rufus",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "dependencies": {
     "bluebird": "1.0.0",
-    "chalk": "0.3.0",
+    "chalk": "0.4.0",
     "stack-trace": "0.0.7"
   },
   "devDependencies": {
     "jshint": "2.3.0",
     "mocha": "1.13.0",
     "sinon": "~1.7.3",
-    "istanbul": "~0.1.44",
+    "istanbul": "~0.2.4",
     "benchmark": "1.0.0",
     "intel": "latest",
     "winston": "latest",
