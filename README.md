@@ -366,15 +366,22 @@ new rufus.handlers.File(filenameOrOptions);
 The File handler will write messages to a file on disk. It extends the [Stream](#streamhandler) handler, by using the `WritableStream` created from the filename.
 
 - **file**: A string of a filename to write messages to.
+- **highWaterMark**: size of buffer for file stream, by default 64kb.
 - Plus options from [Handler](#handlers)
 
 As a shortcut, you can pass the `file` String directly to the constructor, and all other options will just use default values.
 
-This handler support of reopening file on `SIGUSR2`, this can be helpfull if you are using `logrotate(8)`
+This handler can be used with external rotating systems:
+
+```js
+process.on('SIGUSR2', function() {
+    Handler.all.forEach(function(handler) {
+        if(handler.reopen) handler.reopen();
+    });
+});
+```
 
 ### RotatingFileHandler
-
-I'd personally prefer linux way and use `logrotate`, but this came from `intel`.
 
 ```js
 new rufus.handlers.Rotating(options);
@@ -384,6 +391,7 @@ The Rotating handler extends the [File](#filehandler) handler, making sure log f
 
 - **maxSize** - A number of bytes to restrict the size of log files.
 - **maxFiles** - A number of log files to create after the size restriction is met.
+- **oldFile** - This is a name of file to which old files will be moved. This file format string support option %i to mark place where index inserted. By default it is **file + '.%i'**.
 
 As files reach the max size, the files will get moved to a the same name, with a number attached to the end. So, `rufus.log` will become `rufus.log.1`, and `rufus.log.1` would move to `rufus.log.2`, up to the maxFiles number.
 

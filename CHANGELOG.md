@@ -1,5 +1,10 @@
 # rufus ChangeLog
 
+## 0.5.1 - 2014-01-25
+
+- Fix last tests
+- Small cleanup for file handler
+
 ## 0.5.0 - 2013-11-13
 
 - General cleanup
