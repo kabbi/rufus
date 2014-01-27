@@ -12,14 +12,14 @@ I already got a question, why i need to fork it. I did such changes:
 See benchmark dir for benchmark code, that is results:
 ```
 $ node benchmark/logging.js
-console.info x 1,136,531 ops/sec ±0.74% (87 runs sampled)
-rufus.info x 178,431 ops/sec ±1.30% (97 runs sampled)
-winston.info x 62,133 ops/sec ±0.44% (99 runs sampled)
-intel.info x 53,592 ops/sec ±0.93% (96 runs sampled)
-bunyan.info x 83,840 ops/sec ±0.41% (96 runs sampled)
+console.info x 1,459,530 ops/sec ±0.78% (88 runs sampled)
+rufus.info x 201,119 ops/sec ±0.62% (91 runs sampled)
+winston.info x 65,377 ops/sec ±1.05% (80 runs sampled)
+intel.info x 59,193 ops/sec ±1.13% (97 runs sampled)
+bunyan.info x 82,040 ops/sec ±0.68% (100 runs sampled)
+log4js.info x 45,273 ops/sec ±2.64% (83 runs sampled)
 Fastest is console.info
 ```
-
 I do not think anyone who understand how logging used in work should consider winston or log4js to use. Seriosly!
 
 ## Getting started
@@ -389,9 +389,10 @@ new rufus.handlers.Rotating(options);
 
 The Rotating handler extends the [File](#filehandler) handler, making sure log files don't go over a specified size.
 
-- **maxSize** - A number of bytes to restrict the size of log files.
+- **maxSize** - A number of bytes to restrict the size of log files. It can be number or string in format '1gb 2mb 3kb 1b', which will be converted to number.
+- **timeRate** - Time rate it is one of words: 'yearly', 'monthly', 'daily', 'weekly', 'hourly' or number of ms which will be used to callculate next rotation. With this option for now maxFiles does not work.
 - **maxFiles** - A number of log files to create after the size restriction is met.
-- **oldFile** - This is a name of file to which old files will be moved. This file format string support option %i to mark place where index inserted. By default it is **file + '.%i'**.
+- **oldFile** - This is a name of file to which old files will be moved. This file format string support option %i to mark place where index and/or date inserted. By default it is **file + ['-%d'] + ['.%i']** ([ ] - means optional).
 
 As files reach the max size, the files will get moved to a the same name, with a number attached to the end. So, `rufus.log` will become `rufus.log.1`, and `rufus.log.1` would move to `rufus.log.2`, up to the maxFiles number.
 

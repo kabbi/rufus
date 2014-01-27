@@ -19,7 +19,6 @@
   "noarg": true,
   "passfail": false,
   "shadow": true,
-  "strict": false,
   "supernew": false,
   "trailing": true,
   "undef": true,

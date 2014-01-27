@@ -2,23 +2,24 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const assert = require('assert');
-const EventEmitter = require('events').EventEmitter;
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
+var assert = require('assert');
+var EventEmitter = require('events').EventEmitter;
+var fs = require('fs');
+var os = require('os');
+var path = require('path');
 
-const Q = require('q');
+var rufus = require('../');
 
-const rufus = require('../');
-
-const NOW = Date.now();
+var NOW = Date.now();
 var counter = 1;
 function tmp() {
   return path.join(os.tmpDir(),
     'rufus-' + NOW + '-' + process.pid + '-' + (counter++));
 }
 
+function rec(msg, level) {
+  return { message: msg, args: [msg], timestamp: new Date() };
+}
 
 function bytes(x) {
   var b = new Buffer(x);
@@ -249,13 +250,37 @@ describe('RotatingFileHandler', function () {
       });
 
       assert.equal(handler._file, filename);
-      handler.handle({ message: bytes(60), args: [bytes(60)] });
-      handler.handle({ message: bytes(50), args: [bytes(50)] });
-      handler.handle({ message: bytes(45), args: [bytes(45)] }).then(function () {
+      handler.handle(rec(bytes(60)));
+      handler.handle(rec(bytes(50)));
+      handler.handle(rec(bytes(45))).then(function () {
         assert.equal(fs.statSync(filename).size, 46);
         assert.equal(fs.statSync(filename + '.1').size, 51);
         assert.equal(fs.statSync(filename + '.2').size, 61);
       }).done(done);
+    });
+
+    it('with maxSize should create new files date rated', function (done) {
+      this.timeout(5000);
+
+      var filename = tmp();
+      var handler = new rufus.handlers.Rotating({
+        file: filename,
+        timeRate: 200,
+        formatter: new rufus.Formatter('%message%n')
+      });
+
+      var times = 0;
+      var interval = setInterval(function() {
+        handler.handle(rec(bytes(50)));
+        times += 1;
+        if(times > 3) {
+          clearInterval(interval);
+          handler.handle(rec(bytes(45))).then(function () {
+            //should be 4 files, but i have no idea how correctly test it
+            assert(true);
+          }).done(done);
+        }
+      }, 250);
     });
 
     it('with maxFiles should not create more than max', function (done) {
