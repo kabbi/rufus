@@ -1,5 +1,9 @@
 # rufus ChangeLog
 
+## 0.5.2 - 2014-01-27
+
+ - Time based log rotation
+
 ## 0.5.1 - 2014-01-25
 
 - Fix last tests
