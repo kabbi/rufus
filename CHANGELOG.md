@@ -1,5 +1,9 @@
 # rufus ChangeLog
 
+## 0.5.3 - 2014-01-28
+
+ - Some fixes for formats
+
 ## 0.5.2 - 2014-01-27
 
  - Time based log rotation

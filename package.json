@@ -1,6 +1,6 @@
 {
   "name": "rufus",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "dependencies": {
     "bluebird": "1.0.0",
     "chalk": "0.4.0",
@@ -27,9 +27,6 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/btd/rufus.git"
-  },
-  "engines": {
-    "node": ">=0.8.0"
   },
   "keywords": [
     "log",
