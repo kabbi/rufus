@@ -1,5 +1,9 @@
 # rufus ChangeLog
 
+## 0.5.5 - 2014-01-30
+
+ - Typo in file handler .reopen
+
 ## 0.5.4 - 2014-01-30
 
  - Make rotating handler work now both with size based and time based rotations.
@@ -37,6 +41,8 @@
 - changed Promises from Q to bluebird, significantly faster
 - fixed Console handler from using accepting format options
 - make format and dates compiled. Perfomance stability with any format
+
+# inter Changelog
 
 ## v0.2.0 - 2013-10-04
 
