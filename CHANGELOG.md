@@ -1,5 +1,9 @@
 # rufus ChangeLog
 
+## 0.5.4 - 2014-01-30
+
+ - Make rotating handler work now both with size based and time based rotations.
+
 ## 0.5.3 - 2014-01-28
 
  - Some fixes for formats
