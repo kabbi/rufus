@@ -390,11 +390,12 @@ new rufus.handlers.Rotating(options);
 The Rotating handler extends the [File](#filehandler) handler, making sure log files don't go over a specified size.
 
 - **maxSize** - A number of bytes to restrict the size of log files. It can be number or string in format '1gb 2mb 3kb 1b', which will be converted to number.
-- **timeRate** - Time rate it is one of words: 'yearly', 'monthly', 'daily', 'weekly', 'hourly' or number of ms which will be used to callculate next rotation. With this option for now maxFiles does not work.
-- **maxFiles** - A number of log files to create after the size restriction is met.
+- **timeRate** - Time rate it is one of words: 'yearly', 'monthly', 'daily', 'weekly', 'hourly' or number of ms which will be used to calculate next rotation.
+- **maxIndex** - A number of log files to create after the size restriction is met. Used with **maxSize**
+- **maxHistory** - A number of rotations to keep. Used with **timeRate**.
 - **oldFile** - This is a name of file to which old files will be moved. This file format string support option %i to mark place where index and/or date inserted. By default it is **file + ['-%d'] + ['.%i']** ([ ] - means optional).
 
-As files reach the max size, the files will get moved to a the same name, with a number attached to the end. So, `rufus.log` will become `rufus.log.1`, and `rufus.log.1` would move to `rufus.log.2`, up to the maxFiles number.
+As files reach the max size, the files will get moved to a the same name, with a number attached to the end. So, `rufus.log` will become `rufus.log.1`, and `rufus.log.1` would move to `rufus.log.2`, up to the `maxIndex` number.
 
 ### NullHandler
 

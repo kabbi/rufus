@@ -10,6 +10,8 @@ var path = require('path');
 
 var rufus = require('../');
 
+var glob = require('../lib/utils/re-glob');
+
 var NOW = Date.now();
 var counter = 1;
 function tmp() {
@@ -266,6 +268,7 @@ describe('RotatingFileHandler', function () {
       var handler = new rufus.handlers.Rotating({
         file: filename,
         timeRate: 200,
+        maxHistory: 2,
         formatter: new rufus.Formatter('%message%n')
       });
 
@@ -276,7 +279,10 @@ describe('RotatingFileHandler', function () {
         if(times > 3) {
           clearInterval(interval);
           handler.handle(rec(bytes(45))).then(function () {
-            //should be 4 files, but i have no idea how correctly test it
+            //glob(handler._remover.filesFormat, function(err, matches) {
+            //  console.log(matches);
+            //});
+            //should be 2 files, but i have no idea how correctly test it +1 current
             assert(true);
           }).done(done);
         }
@@ -290,7 +296,7 @@ describe('RotatingFileHandler', function () {
       var handler = new rufus.handlers.Rotating({
         file: filename,
         maxSize: 64,
-        maxFiles: 3,
+        maxIndex: 3,
         formatter: new rufus.Formatter('%message%n')
       });
 
