@@ -268,7 +268,7 @@ describe('RotatingFileHandler', function () {
       var handler = new rufus.handlers.Rotating({
         file: filename,
         timeRate: 200,
-        maxHistory: 2,
+        maxFiles: 2,
         formatter: new rufus.Formatter('%message%n')
       });
 
@@ -296,7 +296,7 @@ describe('RotatingFileHandler', function () {
       var handler = new rufus.handlers.Rotating({
         file: filename,
         maxSize: 64,
-        maxIndex: 3,
+        maxFiles: 3,
         formatter: new rufus.Formatter('%message%n')
       });
 

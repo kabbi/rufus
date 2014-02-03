@@ -1,5 +1,10 @@
 # rufus ChangeLog
 
+## 0.5.6 - 2014-02-03
+
+ - Bug in rotating handler
+ - Stable and define log remover
+
 ## 0.5.5 - 2014-01-30
 
  - Typo in file handler .reopen
